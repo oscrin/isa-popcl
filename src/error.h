@@ -5,7 +5,7 @@
 *  Author: Jan Kubica
 *  Login: xkubic39
 *  Email: xkubic39@stud.fit.vutbr.cz
-*  File: error.h - header file for Error class
+*  File: error.h - Error class definition
 */
 
 #ifndef _ERROR__H
@@ -22,7 +22,8 @@ enum err_num {
     INCOMPATIBLE_PORT = 5,
     AUTH_FILE_ERR = 6,
     AUTH_SYNTAX_ERR = 7,
-    DIR_NOT_CREATED = 8
+    DIR_NOT_CREATED = 8,
+    HOST_UNRESOLVED = 9
 
 
 };

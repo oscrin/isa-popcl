@@ -10,8 +10,10 @@
 
 #include <string>
 #include <string.h>
+#include <iostream>
 
 #include "connection.h"
+#include "error.h"
 
 #include <arpa/inet.h>
 #include <string>
@@ -26,19 +28,35 @@
 
 int Connection::prepareComunication(int portNum, std::string hostname) {
 
-    if ((clientSocket = socket(PF_INET, SOCK_STREAM, 0)) <= 0) {
-        perror("ERROR: socket");
-        exit(EXIT_FAILURE);
-    }
-
-    /* Address family = Internet */
+	if (isIPv4(hostname)) {
+	/* Address family = Internet */
     serverAddr.sin_family = AF_INET;
-    /* Set port number, using htons function to use proper byte order */
-    serverAddr.sin_port = htons(portNum);
     /* Set IP address to localhost */
     serverAddr.sin_addr.s_addr = inet_addr(hostname.c_str());
-    /* Set all bits of the padding field to 0 */
+	}
+	else if (isIPv6(hostname)) {
+	/* Address family = Internet */
+    serverAddr.sin_family = AF_INET6;
+    /* Set IP address to localhost */
+    serverAddr.sin_addr.s_addr = inet_addr(hostname.c_str());
+	}
+	else {
+	std::string ipv4 = getIPv4fromHost(hostname);
+	/* Address family = Internet */
+    serverAddr.sin_family = AF_INET;
+    /* Set IP address to localhost */
+    serverAddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
+	}
+
+    /* Set port number, using htons function to use proper byte order */
+    serverAddr.sin_port = htons(portNum);
+	/* Set all bits of the padding field to 0 */
     memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero)); 
+
+    if ((clientSocket = socket(PF_INET, SOCK_STREAM, 0)) <= 0) {
+        perror("ERROR: socket");
+        exit(EXIT_FAILURE);	
+    }
 
     if (connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != 0) {
         perror("ERROR: connect");
@@ -60,7 +78,6 @@ std::string Connection::receiveMessage() {
     return receivedMessage;
 }
 
-
 int Connection::sendMessage(std::string message) {
 
 	memset(buffer, 0, BUFF_LEN);
@@ -75,11 +92,38 @@ int Connection::sendMessage(std::string message) {
 
 bool Connection::isIPv4(const std::string& str) {
     struct sockaddr_in sa;
-    return inet_pton(AF_INET, str.c_str(), &(sa.sin_addr))!=0;
+    if (inet_pton(AF_INET, str.c_str(), &(sa.sin_addr)) != 0)
+    	return true;
+    else
+    	return false;
 }
 
 bool Connection::isIPv6(const std::string& str) {
     struct sockaddr_in6 sa;
-    return inet_pton(AF_INET6, str.c_str(), &(sa.sin6_addr))!=0;
+    if (inet_pton(AF_INET6, str.c_str(), &(sa.sin6_addr)) != 0)
+    	return true;
+    else
+    	return false; 
 }
 
+// TODO zdroj http://beej.us/guide/bgnet/output/html/multipage/gethostbynameman.html
+std::string Connection::getIPv4fromHost(std::string hostname) {
+
+	struct hostent *h;
+    struct in_addr **addr_list;
+
+	if ((h = gethostbyname(hostname.c_str())) == NULL) {  // get the host info
+        std::cerr << "Host Unresolved." << std::endl;
+        exit(HOST_UNRESOLVED);
+    }
+
+    addr_list = (struct in_addr **)h->h_addr_list;
+
+    std::string address = "";
+    for (int i = 0; addr_list[i] != NULL; i++) {
+        address.append(inet_ntoa(*addr_list[i]));
+    }
+
+    //TODO split
+    return address;
+}

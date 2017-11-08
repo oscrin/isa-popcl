@@ -20,14 +20,13 @@ CFLAGS=-std=c++11
 
 # Filenames and extensions
 FILE=popcl
-ARGS=args
 EXT=cpp
 DOC=-doc.pdf
 LOGIN=xkubic39
 
 #Compiling
 make: popcl.cpp
-	$(CC) $(CFLAGS) -o $(FILE) $(FILE).$(EXT) src/$(ARGS).$(EXT) src/connection.$(EXT)
+	$(CC) $(CFLAGS) -o $(FILE) $(FILE).$(EXT) src/args.$(EXT) src/connection.$(EXT) src/pop3man.$(EXT) src/fileman.$(EXT)
 
 # Removing binaries
 clean:
@@ -35,7 +34,7 @@ clean:
 
 # Packing
 pack:
-	tar -cf $(LOGIN).tar Makefile $(FILE).$(EXT)
+	tar -cf $(LOGIN).tar Makefile $(FILE).$(EXT) auth_file.txt src/
 	gzip $(LOGIN).tar
 	mv $(LOGIN).tar.gz $(LOGIN).tgz
 

@@ -14,10 +14,9 @@
 #include "error.h"
 
 #include <iostream>
-#include <fstream>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/stat.h>
+
 
 void printHelp() {
     std::cout << "\e[32mProgram usage:" << std::endl;
@@ -93,7 +92,7 @@ int Arguments::parse(int argc, char * argv[])
         setNFlag();
         break;
       case 'a':
-        compileAuthFile(optarg);
+        setAuthFile(optarg);
         break;
       case 'o':
         setOutDir(optarg);
@@ -227,13 +226,6 @@ void Arguments::setOutDir(char* optarg) {
   if (o_flag == false) {
     o_flag = true;
     out_dir = optarg;
-    int status;
-
-    status = mkdir(out_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (status == -1) {
-      std::cerr << "ERROR: Directory cannot be created." << std::endl;
-      exit(DIR_NOT_CREATED); 
-    }
   }
   else {
     std::cerr << "ERROR: OFlag" << std::endl;
@@ -287,46 +279,10 @@ std::string Arguments::getCertAddr() {
 	return cert_addr;
 }
 
-int Arguments::compileAuthFile(char* optarg) {
+void Arguments::setAuthFile(char* optarg) {
   if (a_flag == false) {
     a_flag = true;
-    std::ifstream aF;
-    std::string nl;
-
-    aF.open(optarg);
-    if (aF.is_open()) {
-      getline(aF,username);
-      getline(aF,pwd);
-      while (!aF.eof()) {
-        getline(aF,nl);
-        if (!nl.empty()) {
-          std::cerr << "ERROR: Syntax error in authentication file." << std::endl;
-          exit(AUTH_SYNTAX_ERR); 
-        }
-      }
-   //   std::cout << "Last_line = '" << nl << "'" << std::endl;
-      aF.close();
-      // auth_parsing
-      if (username.substr(0,11).compare("username = ") == 0)
-        username.erase(0,11);
-      else {
-        std::cerr << "ERROR: Syntax error on line 1 in authentication file." << std::endl;
-        exit(AUTH_SYNTAX_ERR);
-      }
-      if (pwd.substr(0,11).compare("password = ") == 0)
-        pwd.erase(0,11);
-      else {
-        std::cerr << "ERROR: Syntax error on line 2 in authentication file." << std::endl;
-        exit(AUTH_SYNTAX_ERR);
-      }
-      // ------------
-
-  //    std::cout << "U: " << username << std::endl << "P: " << pwd << std::endl;
-    }
-    else {
-      std::cerr << "ERROR: Authentication file not found!" << std::endl;
-      exit(AUTH_FILE_ERR);
-    }
+    auth_file = optarg;
   }
   else {
     std::cerr << "ERROR: AFlag" << std::endl;

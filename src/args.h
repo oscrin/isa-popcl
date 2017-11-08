@@ -5,7 +5,7 @@
 *  Author: Jan Kubica
 *  Login: xkubic39
 *  Email: xkubic39@stud.fit.vutbr.cz
-*  File: args.h - header file for Arguments class
+*  File: args.h - Arguments class definition
 */
 
 #ifndef _ARGS__H
@@ -73,8 +73,6 @@ class Arguments {
 
         std::string getOutDir();
         std::string getAuthFile();
-
-		int compileAuthFile(char *optarg);
 
         std::string getUsername();
         std::string getPwd();

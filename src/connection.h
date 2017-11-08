@@ -5,7 +5,7 @@
 *  Author: Jan Kubica
 *  Login: xkubic39
 *  Email: xkubic39@stud.fit.vutbr.cz
-*  File: connection.cpp - Connection class implementation
+*  File: connection.h - Connection class definition
 */
 
 #ifndef _CON__H
@@ -25,6 +25,7 @@ class Connection {
     	struct sockaddr_in serverAddr;
     	int portNum;
     	std::string message;
+    	std::string receivedMessage;
     	std::string hostname;
     	long long byteCountSend, byteCountRead = 0;
 
@@ -34,6 +35,7 @@ class Connection {
 
 		bool isIPv4(const std::string& str);
 		bool isIPv6(const std::string& str);
+		std::string getIPv4fromHost(std::string hostname);
 };
 
 #endif

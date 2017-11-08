@@ -20,6 +20,8 @@
 
 #include "src/args.h"
 #include "src/connection.h"
+#include "src/pop3man.h"
+#include "src/fileman.h"
 
 int main(int argc, char* argv[]) {
 
@@ -28,64 +30,41 @@ int main(int argc, char* argv[]) {
     args.parse(argc,argv);
 
     Connection con;
-
     
     con.portNum = args.getPort();
     con.hostname = args.getServer();
+
+    std::string receivedMessage;
         
    // std::cout << "Server = " << args.getServer() << std::endl;
 
 	/* ------------------- SOCKET DEFINITION -------------------- */
 
-    con.prepareComunication(con.portNum, con.hostname);
+    con.prepareComunication(con.portNum, con.hostname); // creates socket, sets IP, port and connects to server
 
     /* -------------------- RECEIVING SOCKET -------------------- */
    
-    std::string receivedMessage = con.receiveMessage();
-   
-    std::cout << receivedMessage;
-
-    /* -------------------- SENDING SOCKET -------------------- */
-
-    con.message = "USER " + args.getUsername() + "\r\n";
-
-    con.sendMessage(con.message);
-
-    std::cout << con.message;
-
-	/* -------------------- RECEIVING SOCKET -------------------- */
-
     receivedMessage = con.receiveMessage();
    
-    std::cout << receivedMessage;
+    std::cout << "S: " << receivedMessage;
 
-    /* -------------------- SENDING SOCKET -------------------- */
+    Pop3Manager p3m;
 
-    con.message = "PASS " + args.getPwd() + "\r\n";
-
-    con.sendMessage(con.message);
-
-    std::cout << con.message;
-
-	/* -------------------- RECEIVING SOCKET -------------------- */
-
-    receivedMessage = con.receiveMessage();
-   
-    std::cout << receivedMessage;    
-
-    /* -------------------- SENDING SOCKET -------------------- */
+    if (p3m.compileAuthFile(args.getAuthFile())) {
+    	p3m.unsecuredLogin(con);
+    }
 
     con.message = "LIST\r\n";
 
     con.sendMessage(con.message);
 
-    std::cout << con.message;
+    std::cout << "C: " << con.message;
 
 	/* -------------------- RECEIVING SOCKET -------------------- */
 
     receivedMessage = con.receiveMessage();
    
-    std::cout << receivedMessage;
+    std::cout << "S: " << receivedMessage;
 
     /* -------------------- SENDING SOCKET -------------------- */
 
@@ -93,15 +72,31 @@ int main(int argc, char* argv[]) {
 
     con.sendMessage(con.message);
 
-    std::cout << con.message;
+    std::cout << "C: " << con.message;
 
 	/* -------------------- RECEIVING SOCKET -------------------- */
+
+	std::string content = "";
 
 for (int i = 0; i < 2; i++) {
     receivedMessage = con.receiveMessage();
    
-    std::cout << receivedMessage;
+    content.append(receivedMessage);
+    std::cout << "S: " << receivedMessage;
 }
+
+	// remove first line and last characters "\r\n.\r\n"
+	content.erase(0, content.find("\r\n") + 2);
+	content.erase(content.length()-5, content.length());
+
+	std::cout << content;
+
+	FileManager fm;
+	fm.createOutDir(args.getOutDir());
+
+	std::string file = fm.generateEmailFileName();
+
+	fm.saveEmailFile(file, content);
 
     return 0;
 }
