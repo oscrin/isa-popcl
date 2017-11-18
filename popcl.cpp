@@ -23,6 +23,7 @@
 #include "src/pop3man.h"
 #include "src/fileman.h"
 
+
 int main(int argc, char* argv[]) {
 
     Arguments args;
@@ -54,19 +55,27 @@ int main(int argc, char* argv[]) {
     	p3m.unsecuredLogin(con);
     }
 
+    con.sendMessage("LIST\r\n");
+    con.receiveMessage();
+    
+    int count = p3m.retrieveMessages(con, args.getOutDir());
+
+/*
+    std::cout << "Z main: '" << count << "'" << std::endl;
+
     con.message = "LIST\r\n";
 
     con.sendMessage(con.message);
 
     std::cout << "C: " << con.message;
 
-	/* -------------------- RECEIVING SOCKET -------------------- */
+	/* -------------------- RECEIVING SOCKET -------------------- 
 
     receivedMessage = con.receiveMessage();
    
     std::cout << "S: " << receivedMessage;
 
-    /* -------------------- SENDING SOCKET -------------------- */
+    /* -------------------- SENDING SOCKET -------------------- 
 
     con.message = "RETR 2\r\n";
 
@@ -74,16 +83,16 @@ int main(int argc, char* argv[]) {
 
     std::cout << "C: " << con.message;
 
-	/* -------------------- RECEIVING SOCKET -------------------- */
+	/* -------------------- RECEIVING SOCKET -------------------- 
 
 	std::string content = "";
 
-for (int i = 0; i < 2; i++) {
-    receivedMessage = con.receiveMessage();
-   
-    content.append(receivedMessage);
-    std::cout << "S: " << receivedMessage;
-}
+	for (int i = 0; i < 2; i++) {
+	    receivedMessage = con.receiveMessage();
+	   
+	    content.append(receivedMessage);
+	    std::cout << "S: " << receivedMessage;
+	}
 
 	// remove first line and last characters "\r\n.\r\n"
 	content.erase(0, content.find("\r\n") + 2);
@@ -97,6 +106,10 @@ for (int i = 0; i < 2; i++) {
 	std::string file = fm.generateEmailFileName();
 
 	fm.saveEmailFile(file, content);
+
+	*/
+
+	p3m.logout(con);
 
     return 0;
 }

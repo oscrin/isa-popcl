@@ -26,12 +26,14 @@ class Connection {
     	int portNum;
     	std::string message;
     	std::string receivedMessage;
+    	std::string sentMessage;
     	std::string hostname;
     	long long byteCountSend, byteCountRead = 0;
 
     	int prepareComunication(int portNum, std::string hostname);
     	std::string receiveMessage();
     	int sendMessage(std::string message);
+    	int sendMessage();
 
 		bool isIPv4(const std::string& str);
 		bool isIPv6(const std::string& str);

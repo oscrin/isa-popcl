@@ -8,6 +8,9 @@
 *  File: fileman.h - FileManager class definition
 */
 
+#ifndef _FILEMAN__H
+#define _FILEMAN__H
+
 #include <string>
 
 class FileManager {
@@ -21,7 +24,7 @@ class FileManager {
 		struct email_param {
 			std::string emailFile;
 			int messageNum;
-			std::string messageID;
+
 			long int size;
 
 			std::string subject;
@@ -33,6 +36,8 @@ class FileManager {
 		};
 
 		email_param email;
+		std::string messageID;
+		std::string messageUIDL;
 
 		bool createOutDir(std::string dir);
 
@@ -40,5 +45,9 @@ class FileManager {
 
 		void identificateMail(std::string content);
 
-		std::string generateEmailFileName();
+		std::string generateEmailNameByMID(std::string content);
+		std::string generateEmailNameByUIDL(std::string uidl);
+		bool actualizeTsvFile(std::string uidl, std::string mid);
 };
+
+#endif

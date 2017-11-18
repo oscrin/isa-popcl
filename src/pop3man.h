@@ -9,14 +9,20 @@
 */
 
 #include "connection.h"
+#include "fileman.h"
 #include <string>
 
 class Pop3Manager {
 	private:
 		std::string username;
 		std::string pwd;
+		int messageCount;
 	public:
 		int unsecuredLogin(Connection con);
 		bool compileAuthFile(std::string auth_file);
-
+		int countMessages(Connection con);
+		int retrieveMessages(Connection con, std::string folder);
+		int retrieveMail(Connection con, FileManager fm, int mailNum, std::string folder);
+		int logout(Connection con);
+		char* dotCorrection(std::string content);
 };

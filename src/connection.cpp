@@ -70,11 +70,14 @@ std::string Connection::receiveMessage() {
 	memset(buffer, 0, BUFF_LEN);
 
     /*---- Read the message from the server into the buffer ----*/
-    byteCountRead = recv(clientSocket, buffer, BUFF_LEN, 0);
+    byteCountRead = recv(clientSocket, buffer, BUFF_LEN/2, 0);
     if (byteCountRead < 0)
         perror("ERROR: recvfrom");
 
-    std::string receivedMessage = buffer;
+    receivedMessage = buffer;
+
+    std::cout << "S: " << receivedMessage;
+
     return receivedMessage;
 }
 
@@ -86,6 +89,26 @@ int Connection::sendMessage(std::string message) {
     byteCountSend = send(clientSocket, buffer, message.length(), 0);
     if (byteCountSend < 0)
         perror("ERROR: sendto");
+
+    sentMessage = message;
+
+    std::cout << "C: " << sentMessage;
+
+    return byteCountSend;
+}
+
+int Connection::sendMessage() {
+
+	memset(buffer, 0, BUFF_LEN);
+    strcpy(buffer, message.c_str());
+
+    byteCountSend = send(clientSocket, buffer, message.length(), 0);
+    if (byteCountSend < 0)
+        perror("ERROR: sendto");
+
+    sentMessage = message;
+
+    std::cout << "C: " << sentMessage;
 
     return byteCountSend;
 }
