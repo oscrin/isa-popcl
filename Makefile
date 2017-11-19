@@ -16,7 +16,7 @@
 CC=g++
 
 # Compile arguments (-pedantic -Wall -W)
-CFLAGS=-std=c++11
+CFLAGS=-std=c++11 -Wall -g
 LDFLAGS=-L/usr/local/ssl/lib
 LDLIBS=-lssl -lcrypto
 
@@ -28,7 +28,7 @@ LOGIN=xkubic39
 
 #Compiling
 make: popcl.cpp
-	$(CC) $(CFLAGS) -o $(FILE) $(FILE).$(EXT) src/args.$(EXT) src/connection.$(EXT) src/pop3man.$(EXT) src/fileman.$(EXT) $(LDFLAGS) $(LDLIBS) -Wall
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -o $(FILE) $(FILE).$(EXT) src/args.$(EXT) src/connection.$(EXT) src/pop3man.$(EXT) src/fileman.$(EXT)
 
 # Removing binaries
 clean:
@@ -37,6 +37,4 @@ clean:
 # Packing
 pack:
 	tar -cf $(LOGIN).tar Makefile $(FILE).$(EXT) auth_file.txt src/
-	gzip $(LOGIN).tar
-	mv $(LOGIN).tar.gz $(LOGIN).tgz
 

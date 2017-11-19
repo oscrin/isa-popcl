@@ -38,37 +38,22 @@ bool FileManager::createOutDir( std::string dir) {
 	}
 }
 
-std::string FileManager::generateEmailNameByMID(std::string content) {
-	//TODO
+std::string FileManager::generateEmailFileByMID(std::string mid) {
 
-	// std::cout << "GENERATE1:\n" << content << std::endl;
+	messageID = mid;
 
-	// Message-Id: <20171107180800.3AFCA6CC@centrum.cz>
+	std::ofstream outfile(out_dir + "/" + messageID);
+	outfile.close();
 
-	int index = (content.find("Message-Id:") == std::string::npos) ? content.find("Message-ID:") : content.find("Message-Id:");
-
-	if (index == int(std::string::npos)) {
-		//TODO
-		std::cout << "Message-Id not found." << std::endl;
-		return "tmp";
-	}
-	content.erase(0, index);
-	content.erase(0,content.find("<")+1);
-	messageID = content.substr(0, content.find(">"));
-
-//	std::cout << "ID:\n" << messageID << std::endl;
-//	std::string id = content.substr(i, 
 	return messageID;
 }
 
-std::string FileManager::generateEmailNameByUIDL(std::string uidl) {
-
-	uidl.erase(0,4);
-	uidl.erase(0,uidl.find(" ")+1);
-	uidl = uidl.substr(0,uidl.length()-2);
-//	std::cout << "UIDL: '" << uidl << "'" << std::endl;
+std::string FileManager::generateEmailFileByUIDL(std::string uidl) {
 
 	messageUIDL = uidl;
+
+	std::ofstream outfile(out_dir + "/" + messageUIDL);
+	outfile.close();
 
 	return messageUIDL;
 }

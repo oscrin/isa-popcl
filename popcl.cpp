@@ -14,14 +14,9 @@
 #include <unistd.h>
 #include <errno.h>  // perror()
 
-
-
-
-
 #include "src/args.h"
 #include "src/connection.h"
 #include "src/pop3man.h"
-#include "src/fileman.h"
 
 
 int main(int argc, char* argv[]) {
@@ -37,14 +32,13 @@ int main(int argc, char* argv[]) {
     con.hostname = args.getServer();
 
     std::string receivedMessage;
+
+    Connection * p_con = &con;
         
-   // std::cout << "Server = " << args.getServer() << std::endl;
+//    std::cout << "Server = " << args.getServer() << std::endl;
 
-	/* ------------------- SOCKET DEFINITION -------------------- */
-
-    con.prepareComunication(con.portNum, con.hostname); // creates socket, sets IP, port and connects to server
-
-    /* -------------------- RECEIVING SOCKET -------------------- */
+    // creates socket, sets IP, port and connects to server
+    con.prepareComunication(con.portNum, con.hostname);
    
     receivedMessage = con.receiveMessage();
 
@@ -52,61 +46,11 @@ int main(int argc, char* argv[]) {
 
     if (p3m.compileAuthFile(args.getAuthFile())) {
 //    	p3m.login(con);
-    	p3m.loginSSL(con, args.getCAfile(), args.getCApath());
+//		p3m.logout(con);
+
+    	p3m.login_SSL(p_con, args.getCAfile(), args.getCApath());
+    	p3m.logout_SSL(p_con);
     }
-
-//    p3m.logoutSSL(con);
-
-//    con.sendMessage("LIST\r\n");
-//    con.receiveMessage();
-
-//    int count = p3m.retrieveMessages(con, args.getOutDir());
-
-/*
-    std::cout << "Z main: '" << count << "'" << std::endl;
-
-    con.message = "LIST\r\n";
-
-    con.sendMessage(con.message);
-
-    std::cout << "C: " << con.message;
-
-
-    receivedMessage = con.receiveMessage();
-   
-    std::cout << "S: " << receivedMessage; 
-
-    con.message = "RETR 2\r\n";
-
-    con.sendMessage(con.message);
-
-    std::cout << "C: " << con.message;
-
-	std::string content = "";
-
-	for (int i = 0; i < 2; i++) {
-	    receivedMessage = con.receiveMessage();
-	   
-	    content.append(receivedMessage);
-	    std::cout << "S: " << receivedMessage;
-	}
-
-	// remove first line and last characters "\r\n.\r\n"
-	content.erase(0, content.find("\r\n") + 2);
-	content.erase(content.length()-5, content.length());
-
-	std::cout << content;
-
-	FileManager fm;
-	fm.createOutDir(args.getOutDir());
-
-	std::string file = fm.generateEmailFileName();
-
-	fm.saveEmailFile(file, content);
-
-	*/
-
-//	p3m.logout(con);
 
     return 0;
 }
