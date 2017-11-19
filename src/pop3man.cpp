@@ -16,54 +16,73 @@
 #include <fstream>
 #include <cmath>
 
-int Pop3Manager::unsecuredLogin(Connection con) {
-    /* -------------------- SENDING SOCKET -------------------- */
+int Pop3Manager::login(Connection con) {
 
     con.message = "USER " + username + "\r\n";
-
     con.sendMessage(con.message);
 
-//    std::cout << "C: " << con.message;
+    con.receivedMessage = con.receiveMessage();
 
-	/* -------------------- RECEIVING SOCKET -------------------- */
+    con.message = "PASS " + pwd + "\r\n";
+    con.sendMessage(con.message);
 
     con.receivedMessage = con.receiveMessage();
-   
- //   std::cout << "S: " << con.receivedMessage;
 
-    /* -------------------- SENDING SOCKET -------------------- */
+    return 0;
+}
+
+int Pop3Manager::loginSSL(Connection con, std::string CAfile, std::string CApath) {
+
+    con.message = "CAPA\r\n";
+    con.sendMessage();
+
+    con.receivedMessage = con.receiveMessage();
+
+    con.message = "STLS\r\n";
+    con.sendMessage();
+
+    con.receivedMessage = con.receiveMessage();
+
+    con.prepareSTLS(CAfile.c_str(), CApath.c_str());
+
+//    con.message = "CAPA\r\n";
+//    con.sendMessageSSL(con.message);
+//    con.receivedMessage = con.receiveMessageSSL();
+
+    con.message = "USER " + username + "\r\n";
+    con.sendMessageSSL(con.message);
+
+    con.receivedMessage = con.receiveMessageSSL();
 
     con.message = "PASS " + pwd + "\r\n";
 
-    con.sendMessage(con.message);
+    con.sendMessageSSL(con.message);
 
- //   std::cout << "C: " << con.message;
+    con.receivedMessage = con.receiveMessageSSL();
 
-	/* -------------------- RECEIVING SOCKET -------------------- */
+    // LOGOUT
+	FileManager fm;
 
-    con.receivedMessage = con.receiveMessage();
-   
-//    std::cout << "S: " << con.receivedMessage;    
+    retrieveMailSSL(con, fm, 1, "test_folder");
 
-    /* -------------------- SENDING SOCKET -------------------- */
+    con.message = "QUIT\r\n";
+
+	con.sendMessageSSL(con.message);
+
+	con.receiveMessageSSL();
+
+	con.freeSTLS();
+
     return 0;
 }
 
 int Pop3Manager::countMessages(Connection con) {
 
-	/* -------------------- SENDING SOCKET -------------------- */
-
     con.message = "STAT\r\n";
 
     con.sendMessage(con.message);
 
-//    std::cout << "C: " << con.message;
-
-	/* -------------------- RECEIVING SOCKET -------------------- */
-
     con.receivedMessage = con.receiveMessage();
-   
-//    std::cout << "S: " << con.receivedMessage;
 
     std::string s;
     s = con.receivedMessage;
@@ -76,8 +95,6 @@ int Pop3Manager::countMessages(Connection con) {
     l = strtol(s.c_str(), &pErr, 10);
 
     messageCount = l;
-
-//    std::cout << messageCount << std::endl;
 
     return messageCount;
 }
@@ -98,38 +115,67 @@ int Pop3Manager::retrieveMail(Connection con, FileManager fm, int mailNum, std::
 	    con.receiveMessage();
 	    content.append(con.receivedMessage);
 
-	//    read_len += con.byteCountRead;
-
-	//    std::cout << "\nREAD: " << read_len << " / " << len << std::endl;
-
 	    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
 
-	  //  std::cout << "S: " << receivedMessage;
 	} while (check.compare("\r\n.\r\n") != 0);
 
 	// remove first line and last characters "\r\n.\r\n"
 	content.erase(0, content.find("\r\n") + 2);
 
-//	filename = std::to_string(i);
-
 	std::string header = content.substr(0,content.find("\r\n\r\n"));
-
-//	std::cout << "HEADER:\n" << header << std::endl;
 
 	content = dotCorrection(content);
 
 	content.erase(content.length()-5, 5);
 
 	filename = fm.generateEmailNameByMID(header);
+	
 	fm.saveEmailFile(filename, content);
 
 	fm.actualizeTsvFile(fm.messageUIDL, fm.messageID);
 
 	content = "";
 
+	return 0;
+}
+
+int Pop3Manager::retrieveMailSSL(Connection con, FileManager fm, int mailNum, std::string folder) {
+
+	std::string content = "";
+	std::string filename;
+
+	con.message = "RETR " + std::to_string(mailNum) + "\r\n";
+	con.sendMessageSSL();
+
+	std::string check;
+
+	do {
+
+	    con.receiveMessageSSL();
+	    content.append(con.receivedMessage);
+
+	    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+
+	} while (check.compare("\r\n.\r\n") != 0);
+
+	// remove first line and last characters "\r\n.\r\n"
+	content.erase(0, content.find("\r\n") + 2);
+
+	std::string header = content.substr(0,content.find("\r\n\r\n"));
+
+	content = dotCorrection(content);
+
+	content.erase(content.length()-5, 5);
+
+	filename = fm.generateEmailNameByMID(header);
+
+	fm.createOutDir(folder);
+
+	fm.saveEmailFile(filename, content);
+
+//	fm.actualizeTsvFile(fm.messageUIDL, fm.messageID);
 
 	return 0;
-
 }
 
 char* Pop3Manager::dotCorrection(std::string content) {
@@ -174,14 +220,6 @@ char* Pop3Manager::dotCorrection(std::string content) {
 
 int Pop3Manager::retrieveMessages(Connection con, std::string folder) {
 
-	
-//	std::string s;
-	
-//	int len = 0;
-//	int j;
-
-//	int read_len = 0;
-
 	int messageCount = countMessages(con);
 
 	FileManager fm;
@@ -189,11 +227,9 @@ int Pop3Manager::retrieveMessages(Connection con, std::string folder) {
 
 	for (int mailNum = 1; mailNum <= messageCount; mailNum++) {
 
-//		mailNum = std::to_string(i);
-//
 		con.message = "UIDL " + std::to_string(mailNum) + "\r\n";
 		con.sendMessage(con.message);
-//
+
 		con.message = con.receiveMessage();
 		std::string s = con.message;
 
@@ -201,26 +237,6 @@ int Pop3Manager::retrieveMessages(Connection con, std::string folder) {
 
 		std::string uidl = fm.generateEmailNameByUIDL(s);
 
-	//	s.erase(0, s.find(" ")+1); // skip +OK
-	//	std::cout << "TISKNU S2:\n" << s << std::endl;
-	//	s.erase(0, s.find(" ")+1); // skip messageNUm
-	//	std::cout << "TISKNU S3:\n" << s << std::endl;
-
-	//	char* pErr = NULL;
-   	//	long int l;
-    //	l = strtol(s.c_str(), &pErr, 10);
-    //	len = l;
-
-	//	std::cout << "TISKNU LEN:\n" << len << std::endl;
-
-	//	j = (int) ceil((double) len / BUFF_LEN);
-
-
-
-	//	std::cout << "TISKNU CONTENT:\n" << content << std::endl;
-
-
-//		read_len = 0;
 		retrieveMail(con, fm, mailNum, folder);
 
 	}
@@ -230,10 +246,24 @@ int Pop3Manager::retrieveMessages(Connection con, std::string folder) {
 
 int Pop3Manager::logout(Connection con) {
 
-	con.message = "QUIT \r\n";
+	con.message = "QUIT\r\n";
 	con.sendMessage();
 	con.receiveMessage();
-	std::cout << con.receivedMessage << std::endl;
+	std::cout << "LOGOUT: " << con.receivedMessage << std::endl;
+
+	return 0;
+}
+
+int Pop3Manager::logoutSSL(Connection con) {
+
+	con.message = "QUIT\r\n";
+	con.sendMessageSSL(con.message);
+		std::cout << "TADY" << std::endl;
+	con.receiveMessageSSL();
+	std::cout << "LOGOUT(s): " << con.receivedMessage << std::endl;
+
+//	con.freeSTLS();
+
 	return 0;
 }
 
@@ -268,12 +298,11 @@ bool Pop3Manager::compileAuthFile(std::string auth_file) {
         std::cerr << "ERROR: Syntax error on line 2 in authentication file." << std::endl;
         exit(AUTH_SYNTAX_ERR);
       }
-      // ------------
-
-  //    std::cout << "U: " << username << std::endl << "P: " << pwd << std::endl;
     }
     else {
       std::cerr << "ERROR: Authentication file not found!" << std::endl;
       exit(AUTH_FILE_ERR);
     }
+
+    return true;
 }

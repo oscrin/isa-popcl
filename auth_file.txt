@@ -1,2 +1,2 @@
 username = isa.user02
-password = ISAuser02
+password = ISAuser02FIT

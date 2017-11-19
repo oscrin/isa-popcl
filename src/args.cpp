@@ -42,18 +42,19 @@ int Arguments::parse(int argc, char * argv[])
     if (argc == 1)
       printHelp();
 
-    if (argc > 1)
+    if (argc > 1) {
       if (std::string(argv[1]).compare("-h") == 0 || std::string(argv[1]).compare("--help") == 0)
         printHelp();
       else
         setServer(argv[1]);
+    }
   
   int c;
 
   opterr = 0;
 
   for ( int i = 2; i < argc; i++)
-    if ( std::string(argv[i]).substr(0,1) != "-" )
+    if ( std::string(argv[i]).substr(0,1) != "-" ) {
       if (std::string(argv[i-1]).compare("-p") == 0 || 
           std::string(argv[i-1]).compare("-c") == 0 ||
           std::string(argv[i-1]).compare("-C") == 0 ||
@@ -66,6 +67,7 @@ int Arguments::parse(int argc, char * argv[])
         std::cerr << "ERROR: Unknown argument '" << argv[i] << "'." << std::endl;
         exit(ARGUMENT_ERROR);
       }
+    }
 
   while ((c = getopt(argc, argv, "p:TSc:C:dna:o:")) != EOF) {
     switch (c)
@@ -80,10 +82,10 @@ int Arguments::parse(int argc, char * argv[])
         setSFlag();
         break;
       case 'c':
-        setCertFile(optarg);
+        setCAfile(optarg);
         break;
       case 'C':
-        setCertAddr(optarg);
+        setCApath(optarg);
         break;
       case 'd':
         setDFlag();
@@ -121,10 +123,6 @@ int Arguments::parse(int argc, char * argv[])
 
 void Arguments::setServer(char* optarg) {
 	server = std::string(optarg);
-/* TODO
-  if ( std::isdigit( server.substr(0,1) ) )
-    ip4_flag = true;
-*/
 }
 
 void Arguments::setTFlag() {
@@ -200,7 +198,7 @@ void Arguments::setPort(char* oprarg) {
   }
 }
 
-void Arguments::setCertFile(char* optarg) {
+void Arguments::setCAfile(char* optarg) {
   if (c_flag == false) {
     c_flag = true;
     cert_file = optarg;
@@ -211,7 +209,7 @@ void Arguments::setCertFile(char* optarg) {
   }
 }
 
-void Arguments::setCertAddr(char* optarg) {
+void Arguments::setCApath(char* optarg) {
   if (C_flag == false) {
     C_flag = true;
     cert_addr = optarg;
@@ -263,7 +261,7 @@ std::string Arguments::getOutDir() {
 	return out_dir;
 }
 
-std::string Arguments::getCertFile() {
+std::string Arguments::getCAfile() {
   if (cert_file.empty()) {
     std::cerr << "ERROR: Certificate not set!" << std::endl;
     exit(REQUIRED_ARGUMENT);
@@ -271,7 +269,7 @@ std::string Arguments::getCertFile() {
 	return cert_file;
 }
 
-std::string Arguments::getCertAddr() {
+std::string Arguments::getCApath() {
   if (cert_addr.empty()) {
     std::cerr << "ERROR: Certificate folder not set!" << std::endl;
     exit(REQUIRED_ARGUMENT);
@@ -293,8 +291,13 @@ void Arguments::setAuthFile(char* optarg) {
 std::string Arguments::getUsername() {
   if (a_flag == true)
     return username;
+  else
+    return "";
 }
+
 std::string Arguments::getPwd() {
   if (a_flag == true)
     return pwd;
+  else
+    return "";
 }

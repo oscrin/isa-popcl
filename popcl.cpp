@@ -14,9 +14,9 @@
 #include <unistd.h>
 #include <errno.h>  // perror()
 
-/*
 
-*/
+
+
 
 #include "src/args.h"
 #include "src/connection.h"
@@ -25,6 +25,7 @@
 
 
 int main(int argc, char* argv[]) {
+
 
     Arguments args;
 
@@ -46,19 +47,20 @@ int main(int argc, char* argv[]) {
     /* -------------------- RECEIVING SOCKET -------------------- */
    
     receivedMessage = con.receiveMessage();
-   
-    std::cout << "S: " << receivedMessage;
 
     Pop3Manager p3m;
 
     if (p3m.compileAuthFile(args.getAuthFile())) {
-    	p3m.unsecuredLogin(con);
+//    	p3m.login(con);
+    	p3m.loginSSL(con, args.getCAfile(), args.getCApath());
     }
 
-    con.sendMessage("LIST\r\n");
-    con.receiveMessage();
-    
-    int count = p3m.retrieveMessages(con, args.getOutDir());
+//    p3m.logoutSSL(con);
+
+//    con.sendMessage("LIST\r\n");
+//    con.receiveMessage();
+
+//    int count = p3m.retrieveMessages(con, args.getOutDir());
 
 /*
     std::cout << "Z main: '" << count << "'" << std::endl;
@@ -69,21 +71,16 @@ int main(int argc, char* argv[]) {
 
     std::cout << "C: " << con.message;
 
-	/* -------------------- RECEIVING SOCKET -------------------- 
 
     receivedMessage = con.receiveMessage();
    
-    std::cout << "S: " << receivedMessage;
-
-    /* -------------------- SENDING SOCKET -------------------- 
+    std::cout << "S: " << receivedMessage; 
 
     con.message = "RETR 2\r\n";
 
     con.sendMessage(con.message);
 
     std::cout << "C: " << con.message;
-
-	/* -------------------- RECEIVING SOCKET -------------------- 
 
 	std::string content = "";
 
@@ -109,7 +106,7 @@ int main(int argc, char* argv[]) {
 
 	*/
 
-	p3m.logout(con);
+//	p3m.logout(con);
 
     return 0;
 }

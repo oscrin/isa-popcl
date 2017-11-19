@@ -30,8 +30,8 @@ class Arguments {
 		bool t_flag = false;	// sets pop3s secured connection
 		bool s_flag = false;	// sets non secured connection trought STLS (RFC 2595)
 
-		std::string cert_file;	// name of certficificate file
-		std::string cert_addr;	// name of folder containing certification files
+		std::string cert_file = "/dev/null";	// name of certficificate file
+		std::string cert_addr = "/dev/null";	// name of folder containing certification files
 
 		bool d_flag = false;	// send server a message for deleting all messages
         bool n_flag = false;    // works only with new messages
@@ -54,8 +54,8 @@ class Arguments {
         void setPort(char* optarg);
         void setTFlag();
         void setSFlag();
-        void setCertFile(char* optarg);
-        void setCertAddr(char* optarg);
+        void setCAfile(char* optarg);
+        void setCApath(char* optarg);
         void setDFlag();
         void setNFlag();
         void setOutDir(char* optarg);
@@ -68,8 +68,8 @@ class Arguments {
         std::string getServer();
         int getPort();
 
-        std::string getCertFile();
-        std::string getCertAddr();
+        std::string getCAfile();
+        std::string getCApath();
 
         std::string getOutDir();
         std::string getAuthFile();

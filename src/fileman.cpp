@@ -47,11 +47,16 @@ std::string FileManager::generateEmailNameByMID(std::string content) {
 
 	int index = (content.find("Message-Id:") == std::string::npos) ? content.find("Message-ID:") : content.find("Message-Id:");
 
+	if (index == int(std::string::npos)) {
+		//TODO
+		std::cout << "Message-Id not found." << std::endl;
+		return "tmp";
+	}
 	content.erase(0, index);
 	content.erase(0,content.find("<")+1);
 	messageID = content.substr(0, content.find(">"));
 
-	//std::cout << "ID:\n" << id << std::endl;
+//	std::cout << "ID:\n" << messageID << std::endl;
 //	std::string id = content.substr(i, 
 	return messageID;
 }
@@ -70,22 +75,32 @@ std::string FileManager::generateEmailNameByUIDL(std::string uidl) {
 
 bool FileManager::saveEmailFile(std::string emailFile, std::string content) {
 
-if (!out_dir.empty()) {
+	if (!out_dir.empty()) {
 
-	emailFile = out_dir + "/" + emailFile;
+		emailFile = out_dir + "/" + emailFile;
 
-	std::ofstream outfile(emailFile);
-	outfile << content;
-	outfile.close();
-	return true;
+		std::ofstream outfile(emailFile);
+		outfile << content;
+		outfile.close();
+		return true;
 
-} else
-	return false;
+	} else
+		return false;
 }
 
 bool FileManager::actualizeTsvFile(std::string uidl, std::string mid) {
 
 	std::string tsvFile = out_dir + "/.mail";
+
+	std::ifstream aF;
+    std::string nl;
+
+    aF.open(tsvFile);
+    if (aF.is_open()) {
+    	while (!aF.eof()) {
+        	getline(aF,nl);
+   		}
+    }
 
 	if (access( tsvFile.c_str(), F_OK ) != -1) { // file exists
 	

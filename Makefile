@@ -17,6 +17,8 @@ CC=g++
 
 # Compile arguments (-pedantic -Wall -W)
 CFLAGS=-std=c++11
+LDFLAGS=-L/usr/local/ssl/lib
+LDLIBS=-lssl -lcrypto
 
 # Filenames and extensions
 FILE=popcl
@@ -26,7 +28,7 @@ LOGIN=xkubic39
 
 #Compiling
 make: popcl.cpp
-	$(CC) $(CFLAGS) -o $(FILE) $(FILE).$(EXT) src/args.$(EXT) src/connection.$(EXT) src/pop3man.$(EXT) src/fileman.$(EXT)
+	$(CC) $(CFLAGS) -o $(FILE) $(FILE).$(EXT) src/args.$(EXT) src/connection.$(EXT) src/pop3man.$(EXT) src/fileman.$(EXT) $(LDFLAGS) $(LDLIBS) -Wall
 
 # Removing binaries
 clean:

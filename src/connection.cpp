@@ -25,6 +25,8 @@
 #include <netdb.h>
 #include <iomanip>
 
+#include <openssl/ssl.h>
+
 
 int Connection::prepareComunication(int portNum, std::string hostname) {
 
@@ -53,16 +55,67 @@ int Connection::prepareComunication(int portNum, std::string hostname) {
 	/* Set all bits of the padding field to 0 */
     memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero)); 
 
-    if ((clientSocket = socket(PF_INET, SOCK_STREAM, 0)) <= 0) {
+    if ((clientSocket_fd = socket(PF_INET, SOCK_STREAM, 0)) <= 0) {
         perror("ERROR: socket");
         exit(EXIT_FAILURE);	
     }
 
-    if (connect(clientSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != 0) {
+    if (connect(clientSocket_fd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != 0) {
         perror("ERROR: connect");
         exit(EXIT_FAILURE);
     }
     return 0;
+}
+
+// called after prepareCommunication
+int Connection::prepareSTLS(const char * CAfile, const char * CApath) {
+
+	int status;
+	SSL_library_init();
+
+	ctx_object = SSL_CTX_new(SSLv23_client_method());
+	if (ctx_object == NULL) {
+		// TODO raise error
+		;
+	}
+
+	// CAfile x CApath potentially NULL
+	status = SSL_CTX_load_verify_locations(ctx_object, CAfile, CApath);
+	if (status == 0) {
+		// TODO raise error
+		// NELZE OVERIT IDENTITU
+		;
+	}
+
+	ssl_object = SSL_new(ctx_object);
+
+ 	status = SSL_set_fd(ssl_object, clientSocket_fd);
+	if (status == 0) {
+		// TODO raise error
+		;
+	}
+
+	status = SSL_connect(ssl_object);
+	if (status <= 0) {
+		// TODO raise error
+		// The TLS/SSL handshake was not successful
+		;
+	}
+
+//	long status_l;
+//	status_l = SSL_get_verify_result(ssl_object);
+
+	X509 * cert = SSL_get_peer_certificate(ssl_object);
+	
+
+	if (SSL_get_verify_result(ssl_object) != X509_V_OK) {
+    /* Handle the failed verification */
+	// TODO
+	}
+
+	X509_free(cert);
+
+	return 0;
 }
 
 std::string Connection::receiveMessage() {
@@ -70,9 +123,9 @@ std::string Connection::receiveMessage() {
 	memset(buffer, 0, BUFF_LEN);
 
     /*---- Read the message from the server into the buffer ----*/
-    byteCountRead = recv(clientSocket, buffer, BUFF_LEN/2, 0);
+    byteCountRead = recv(clientSocket_fd, buffer, BUFF_LEN/2, 0);
     if (byteCountRead < 0)
-        perror("ERROR: recvfrom");
+        perror("ERROR: recv");
 
     receivedMessage = buffer;
 
@@ -86,9 +139,9 @@ int Connection::sendMessage(std::string message) {
 	memset(buffer, 0, BUFF_LEN);
     strcpy(buffer, message.c_str());
 
-    byteCountSend = send(clientSocket, buffer, message.length(), 0);
+    byteCountSend = send(clientSocket_fd, buffer, message.length(), 0);
     if (byteCountSend < 0)
-        perror("ERROR: sendto");
+        perror("ERROR: send");
 
     sentMessage = message;
 
@@ -102,9 +155,9 @@ int Connection::sendMessage() {
 	memset(buffer, 0, BUFF_LEN);
     strcpy(buffer, message.c_str());
 
-    byteCountSend = send(clientSocket, buffer, message.length(), 0);
+    byteCountSend = send(clientSocket_fd, buffer, message.length(), 0);
     if (byteCountSend < 0)
-        perror("ERROR: sendto");
+        perror("ERROR: send");
 
     sentMessage = message;
 
@@ -112,6 +165,54 @@ int Connection::sendMessage() {
 
     return byteCountSend;
 }
+
+std::string Connection::receiveMessageSSL() {
+
+	memset(buffer, 0, BUFF_LEN);
+
+    byteCountRead = SSL_read(ssl_object, buffer, BUFF_LEN-1);
+    if (byteCountRead < 0)
+        perror("ERROR: SSL_read");
+
+    receivedMessage = buffer;
+
+    std::cout << "S(s): " << receivedMessage;
+
+    return receivedMessage;
+}
+
+int Connection::sendMessageSSL() {
+
+	memset(buffer, 0, BUFF_LEN);
+    strcpy(buffer, message.c_str());
+
+	byteCountSend = SSL_write(ssl_object, buffer, message.length());
+	if (byteCountSend < 0)
+        perror("ERROR: SSL_write");
+
+    sentMessage = message;
+
+    std::cout << "C(s): " << sentMessage;
+
+    return byteCountSend;
+}
+
+int Connection::sendMessageSSL(std::string message) {
+
+	memset(buffer, 0, BUFF_LEN);
+    strcpy(buffer, message.c_str());
+
+	byteCountSend = SSL_write(ssl_object, buffer, message.length());
+	if (byteCountSend < 0)
+        perror("ERROR: SSL_write");
+
+    sentMessage = message;
+
+    std::cout << "C(s): " << sentMessage;
+
+    return byteCountSend;
+}
+
 
 bool Connection::isIPv4(const std::string& str) {
     struct sockaddr_in sa;
@@ -149,4 +250,11 @@ std::string Connection::getIPv4fromHost(std::string hostname) {
 
     //TODO split
     return address;
+}
+
+int Connection::freeSTLS() {
+
+	SSL_CTX_free(ctx_object);
+	SSL_free(ssl_object);
+	return 0;
 }
