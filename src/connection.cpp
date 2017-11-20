@@ -26,44 +26,42 @@ Connection::Connection() {}
 int Connection::prepareComunication(int portNum, std::string hostname) {
 
 	if (isIPv4(hostname)) {
-	/* Address family = Internet */
+	// Address family = Internet
     serverAddr.sin_family = AF_INET;
-    /* Set IP address to localhost */
+    // Set IP address = IPv4 adress
     serverAddr.sin_addr.s_addr = inet_addr(hostname.c_str());
 	}
 	else if (isIPv6(hostname)) {
-	/* Address family = Internet */
+    // Address family = Internet6
     serverAddr.sin_family = AF_INET6;
-    /* Set IP address to localhost */
+    // Set IP address = IPv6 adress
     serverAddr.sin_addr.s_addr = inet_addr(hostname.c_str());
 	}
 	else {
 	std::string ipv4 = getIPv4fromHost(hostname);
-	/* Address family = Internet */
+    // Address family = Internet
     serverAddr.sin_family = AF_INET;
-    /* Set IP address to localhost */
+    // Set IP address = IPv4 adress got from domain name
     serverAddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
 	}
 
-    /* Set port number, using htons function to use proper byte order */
     serverAddr.sin_port = htons(portNum);
-	/* Set all bits of the padding field to 0 */
+
     memset(serverAddr.sin_zero, '\0', sizeof(serverAddr.sin_zero)); 
 
     if ((clientSocket_fd = socket(PF_INET, SOCK_STREAM, 0)) <= 0) {
         perror("ERROR: socket");
-        exit(EXIT_FAILURE);	
+        exit(BSD_ERROR);	
     }
 
-    // https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
-    struct timeval tv;
-    tv.tv_sec = 10; 
-    tv.tv_usec = 0;
-    setsockopt(clientSocket_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
+    struct timeval t;
+    t.tv_sec = 10; 
+    t.tv_usec = 0;
+    setsockopt(clientSocket_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&t,sizeof(struct timeval));
 
     if (connect(clientSocket_fd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != 0) {
         perror("ERROR: connect");
-        exit(EXIT_FAILURE);
+        exit(BSD_ERROR);
     }
     
     return 0;
@@ -78,7 +76,7 @@ int Connection::prepareSSL(const char * CAfile, const char * CApath) {
 	ctx_object = SSL_CTX_new(SSLv23_client_method());
 	if (ctx_object == NULL) {
 		std::cerr << "ERROR: CTX object cannot be created." << std::endl;
-        exit (-100);
+        exit (SSL_ERROR);
 	}
 
     if (std::string(CApath).compare("/dev/null") == 0 and 
@@ -92,7 +90,7 @@ int Connection::prepareSSL(const char * CAfile, const char * CApath) {
         status = SSL_CTX_load_verify_locations(ctx_object, CAfile, CApath);
         if (status == 0) {
             std::cerr << "ERROR: Certificates not added." << std::endl;
-            exit(-49);
+            exit(SSL_ERROR);
         }
 
     }
@@ -102,20 +100,20 @@ int Connection::prepareSSL(const char * CAfile, const char * CApath) {
  	status = SSL_set_fd(ssl_object, clientSocket_fd);
 	if (status == 0) {
         std::cerr << "ERROR: SSL object cannot be set to socket file descriptor." << std::endl;
-        exit (-100);
+        exit (SSL_ERROR);
 	}
 
 	status = SSL_connect(ssl_object);
 	if (status <= 0) {
 		std::cerr << "> ERROR: The TLS/SSL handshake was unsuccessful." << std::endl;
-        exit(-100);
+        exit(SSL_ERROR);
 	}
 
     X509* cert = SSL_get_peer_certificate(ssl_object);
 	if ( cert == NULL) {
 		// no cert from server
         std::cerr << "ERROR: Server not trustworthy - no certificate found." << std::endl;
-        exit(-49);
+        exit(SSL_ERROR);
     }
     else {
         if(SSL_get_verify_result(ssl_object) != X509_V_OK)
@@ -142,7 +140,7 @@ std::string Connection::receiveMessage() {
 
     receivedMessage = buffer;
 
-    std::cout << "S: " << receivedMessage;
+ //   std::cout << "S: " << receivedMessage;
 
     return receivedMessage;
 }
@@ -159,7 +157,7 @@ int Connection::sendMessage(std::string message) {
 
     sentMessage = message;
 
-    std::cout << "C: " << sentMessage;
+ //   std::cout << "C: " << sentMessage;
 
     return byteCountSend;
 }
@@ -175,7 +173,7 @@ std::string Connection::receiveMessage_SSL() {
     }
     receivedMessage = buffer;
 
-    std::cout << "S(s): " << receivedMessage;
+//    std::cout << "S(s): " << receivedMessage;
 
     return receivedMessage;
 }
@@ -191,7 +189,7 @@ int Connection::sendMessage_SSL(std::string message) {
 
     sentMessage = message;
 
-    std::cout << "C(s): " << sentMessage;
+//    std::cout << "C(s): " << sentMessage;
 
     return byteCountSend;
 }

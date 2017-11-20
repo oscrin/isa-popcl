@@ -10,7 +10,7 @@
 # Usage:
 #   - compile program:        make
 #   - clean binaries:         clean
-#   - pack to *.tgz:          pack
+#   - pack to *.tar:          pack
 
 # Compiler
 CC=g++
@@ -23,7 +23,7 @@ LDLIBS=-lssl -lcrypto
 # Filenames and extensions
 FILE=popcl
 EXT=cpp
-DOC=-doc.pdf
+DOC=manual.pdf README
 LOGIN=xkubic39
 
 #Compiling
@@ -36,5 +36,5 @@ clean:
 
 # Packing
 pack:
-	tar -cf $(LOGIN).tar Makefile $(FILE).$(EXT) src/ doc/ README.md
+	tar -cf $(LOGIN).tar Makefile src/ $(FILE).$(EXT) $(DOC)
 
