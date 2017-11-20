@@ -16,7 +16,7 @@
 CC=g++
 
 # Compile arguments (-pedantic -Wall -W)
-CFLAGS=-std=c++11 -Wall -g
+CFLAGS=-std=c++11
 LDFLAGS=-L/usr/local/ssl/lib
 LDLIBS=-lssl -lcrypto
 
@@ -36,5 +36,5 @@ clean:
 
 # Packing
 pack:
-	tar -cf $(LOGIN).tar Makefile $(FILE).$(EXT) auth_file.txt src/
+	tar -cf $(LOGIN).tar Makefile $(FILE).$(EXT) src/ doc/ README.md
 

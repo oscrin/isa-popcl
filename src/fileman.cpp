@@ -16,6 +16,9 @@
 #include <fstream>
 #include <unistd.h>
 
+
+FileManager::FileManager() {}
+
 bool FileManager::createOutDir( std::string dir) {
     int status;
 

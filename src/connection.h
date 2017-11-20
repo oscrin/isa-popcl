@@ -21,6 +21,9 @@ class Connection {
 	private:
 
 	public:
+
+        Connection();
+
 		SSL_CTX * ctx_object;
 		SSL * ssl_object;
 

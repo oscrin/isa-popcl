@@ -12,7 +12,6 @@
 #define _ARGS__H
 
 #include <string>
-#include <iostream>
 
 // popcl <server> [-p <port>] [-T|-S [-c <certfile>] [-C <certaddr>]] [-d] [-n] -a <auth_file> -o <out_dir>
 
@@ -20,8 +19,6 @@ class Arguments {
 	private:
         bool server_flag = false;
 		std::string server;
-//        bool ip4_flag = false;
-//        bool ip6_flag = false;
 
 		bool p_flag = false;
         int port;
@@ -41,26 +38,25 @@ class Arguments {
         bool o_flag = false;
 
 		std::string out_dir;	// sets the path/directory where recieved messages are stored
-		std::string auth_file;	// path/file to authentication file formatted: "username = ... \npassword = ..."
-
-		std::string username;
-		std::string pwd;
+		std::string auth_file;	// path/file to authentication file
 
     public:
         Arguments();
 
         int parse(int argc, char * argv[]);
 
-        int assignPort();
-
         void setServer(char* optarg);
         void setPort(char* optarg);
+
         void setTFlag();
         void setSFlag();
+
         void setCAfile(char* optarg);
         void setCApath(char* optarg);
+
         void setDFlag();
         void setNFlag();
+
         void setOutDir(char* optarg);
         void setAuthFile(char* optarg);
 
@@ -78,11 +74,9 @@ class Arguments {
         std::string getOutDir();
         std::string getAuthFile();
 
-        std::string getUsername();
-        std::string getPwd();
-
         bool checkArgumentsConsistence();
         bool checkMandatoryArguments();
+        int assignPort();
 };
 
 #endif

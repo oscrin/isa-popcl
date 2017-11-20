@@ -8,13 +8,14 @@
 *  File: pop3man.h - Pop3Manager class implementation
 */
 
-#include "error.h"
-#include "pop3man.h"
-
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <cmath>
+
+#include "pop3man.h"
+#include "error.h"
+
+Pop3Manager::Pop3Manager() {}
 
 int Pop3Manager::login(Connection * p_con) {
 
@@ -64,12 +65,14 @@ int Pop3Manager::login_STLS(Connection * p_con, std::string CAfile, std::string 
 
 	p_con->receiveMessage();
 
-    p_con->sendMessage("CAPA\r\n");
+ //   p_con->sendMessage("CAPA\r\n");
+ //   	p_con->receiveMessage();
 
-	p_con->receiveMessage();
-    if ((p_con->receivedMessage).find("STLS") == std::string::npos) {
+	bool stlsFlag = checkCapabilities(*p_con,"STLS", false);
+
+    if (!stlsFlag) {
+    	// Server nepodportuje STLS
     	return -2;
-    	// TODO Server nepodportuje STLS
     }
 
     p_con->sendMessage("STLS\r\n");
@@ -194,8 +197,7 @@ int Pop3Manager::retrieveMail(Connection con, FileManager fm, int mailNum, std::
 
 	content = getMail(con, mailNum, sslFlag);
 	if (content.length() == 0) {
-		std::cerr << "Content prazdny" << std::endl;
-		exit(999);
+		exit(UNSPECIFIED_INTERNAL_ERROR);
 	}
 
 	std::string header = content.substr(0,content.find("\r\n\r\n"));
@@ -204,9 +206,6 @@ int Pop3Manager::retrieveMail(Connection con, FileManager fm, int mailNum, std::
 	} else {
 		fm.messageID = getMID(header);
 	}
-
-//	content.erase(content.length()-5, 5);
-// TODO check dots
 
 	fm.saveEmailFile(fm.messageID, content);
 
@@ -224,10 +223,13 @@ bool Pop3Manager::checkCapabilities(Connection con, std::string capa, bool sslFl
 		con.sendMessage("CAPA\r\n");
 		con.receiveMessage();
 	}
-	if (con.receivedMessage.find(capa) == std::string::npos)
+	if (con.receivedMessage.find(capa) == std::string::npos) {
 		return false;
-	else
+	}
+	else {
 		return true;
+	}
+
 }
 
 int Pop3Manager::retrieveAllMail(Connection con, std::string folder, bool sslFlag, bool nFlag) {
@@ -399,7 +401,6 @@ bool Pop3Manager::compileAuthFile(std::string auth_file) {
           exit(AUTH_SYNTAX_ERR); 
         }
       }
-   //   std::cout << "Last_line = '" << nl << "'" << std::endl;
       aF.close();
       // auth_parsing
       if (username.substr(0,11).compare("username = ") == 0)
@@ -423,7 +424,7 @@ bool Pop3Manager::compileAuthFile(std::string auth_file) {
     return true;
 }
 
-char* Pop3Manager::dotCorrection(std::string content) {
+char * Pop3Manager::dotCorrection(std::string content) {
 
 	long long length = content.length();
 	char * content_buffer = (char*) content.c_str();

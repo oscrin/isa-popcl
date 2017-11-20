@@ -14,6 +14,7 @@
 
 class Pop3Manager {
 	private:
+		
 		std::string username;
 		std::string pwd;
 		int messageCount;
@@ -22,6 +23,9 @@ class Pop3Manager {
 		bool uidlFlag;
 
 	public:
+
+		Pop3Manager();
+
 		int login(Connection * p_con);
 		int login_SSL(Connection * p_con, std::string CAfile, std::string CApath);
 		int login_STLS(Connection * p_con, std::string CAfile, std::string CApath);
@@ -42,6 +46,6 @@ class Pop3Manager {
 		int logout_SSL(Connection * con);
 
 		bool compileAuthFile(std::string auth_file);		
-		char* dotCorrection(std::string content);
+		char * dotCorrection(std::string content);
 		std::string makeHeaderHash(const char * header);
 };

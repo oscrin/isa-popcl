@@ -16,33 +16,21 @@ enum err_num {
     // argument errors
     SUCCESS_EXIT = 0,
     FLAGS_INCOMPATIBLE = 1,
-    FLAG_ALREADY_SET = 2,
+    DOUBLE_ARGUMENT = 2,
     ARGUMENT_ERROR = 3,
+    UNKNOWN_ARGUMENT = 11,
     REQUIRED_ARGUMENT = 4,
     INCOMPATIBLE_PORT = 5,
     AUTH_FILE_ERR = 6,
     AUTH_SYNTAX_ERR = 7,
     DIR_NOT_CREATED = 8,
-    HOST_UNRESOLVED = 9
+    HOST_UNRESOLVED = 9,
+    BAD_LOGIN_OR_PW = -1,
+    STLS_NOT_SUPPORTED = -5,
+    UNSPECIFIED_INTERNAL_ERROR = -99,
+    CONNECTION_ERROR = -31
 
 
 };
 
-/*
-#include <string>
-
-Class Error {
-
-	private:
-		std:string program_name;
-		int err_num;
-
-		std::string title;
-		std::string content;
-
-	public:
-		void error(title, content);
-};
-
-*/
 #endif

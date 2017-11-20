@@ -19,6 +19,9 @@ class FileManager {
 		std::string pwd;
 
 	public:
+
+		FileManager();
+		
 		std::string out_dir;
 		std::string messageID;
 		std::string messageUIDL = "none";

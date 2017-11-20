@@ -16,17 +16,12 @@
 #include "error.h"
 
 #include <arpa/inet.h>
-#include <string>
-#include <sys/types.h> // connect()
-#include <sys/stat.h> // stat()
-#include <sys/socket.h> // connect(), send(), bind(), accept()
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <netdb.h>
-#include <iomanip>
 
 #include <openssl/ssl.h>
 
+Connection::Connection() {}
 
 int Connection::prepareComunication(int portNum, std::string hostname) {
 
@@ -62,8 +57,8 @@ int Connection::prepareComunication(int portNum, std::string hostname) {
 
     // https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
     struct timeval tv;
-    tv.tv_sec = 10;  /* 30 Secs Timeout */
-    tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+    tv.tv_sec = 10; 
+    tv.tv_usec = 0;
     setsockopt(clientSocket_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
 
     if (connect(clientSocket_fd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != 0) {
@@ -74,7 +69,7 @@ int Connection::prepareComunication(int portNum, std::string hostname) {
     return 0;
 }
 
-// called after prepareCommunication
+// called optionally after prepareCommunication
 int Connection::prepareSSL(const char * CAfile, const char * CApath) {
 
 	int status;
@@ -82,71 +77,62 @@ int Connection::prepareSSL(const char * CAfile, const char * CApath) {
 
 	ctx_object = SSL_CTX_new(SSLv23_client_method());
 	if (ctx_object == NULL) {
-		// TODO raise error
-		;
+		std::cerr << "ERROR: CTX object cannot be created." << std::endl;
+        exit (-100);
 	}
 
     if (std::string(CApath).compare("/dev/null") == 0 and 
         std::string(CAfile).compare("/dev/null") == 0) {
 
-    //  std::cout << "Nezadan certifikat" << std::endl;
         SSL_CTX_set_default_verify_paths(ctx_object);
-    }
 
-	// CAfile x CApath potentially NULL
-	status = SSL_CTX_load_verify_locations(ctx_object, CAfile, CApath);
-	if (status == 0) {
-		// TODO raise error
-		// NELZE OVERIT IDENTITU
-		;
-            std::cout << "nelze overit identitu" << std::endl;
+    }
+    else {
+        // CAfile x CApath potentially NULL
+        status = SSL_CTX_load_verify_locations(ctx_object, CAfile, CApath);
+        if (status == 0) {
+            std::cerr << "ERROR: Certificates not added." << std::endl;
             exit(-49);
-	}
+        }
+
+    }
 
 	ssl_object = SSL_new(ctx_object);
 
  	status = SSL_set_fd(ssl_object, clientSocket_fd);
 	if (status == 0) {
-		// TODO raise error
-		;
+        std::cerr << "ERROR: SSL object cannot be set to socket file descriptor." << std::endl;
+        exit (-100);
 	}
 
 	status = SSL_connect(ssl_object);
 	if (status <= 0) {
-		// TODO raise error
-		// The TLS/SSL handshake was not successful
-		;
+		std::cerr << "> ERROR: The TLS/SSL handshake was unsuccessful." << std::endl;
+        exit(-100);
 	}
 
-//	long status_l;
-//	status_l = SSL_get_verify_result(ssl_object);
-
-//	X509 * cert = 
-	if (SSL_get_peer_certificate(ssl_object) == NULL) {
-		// server neposlal certifikat
-
-        std::cout << "Zadny certifikat" << std::endl;
+    X509* cert = SSL_get_peer_certificate(ssl_object);
+	if ( cert == NULL) {
+		// no cert from server
+        std::cerr << "ERROR: Server not trustworthy - no certificate found." << std::endl;
+        exit(-49);
+    }
+    else {
+        if(SSL_get_verify_result(ssl_object) != X509_V_OK)
+        {
+            std::cerr << "ERROR: Server not trustworthy - invalid certificate." << std::endl;
             exit(-49);
-		if(SSL_get_verify_result(ssl_object) != X509_V_OK)
-		{
-    		/* Handle the failed verification */
-    		// prosly certifikat napriklad
-    		std::cout << "Neplatny certifikat" << std::endl;
-            exit(-49);
-		}
-
-	}
-
-//	X509_free(cert);
-
-	return 0;
+        }
+        else {
+            return 0;
+        }
+    }
 }
 
 std::string Connection::receiveMessage() {
 
 	memset(buffer, 0, BUFF_LEN);
 
-    /*---- Read the message from the server into the buffer ----*/
     byteCountRead = recv(clientSocket_fd, buffer, BUFF_LEN-1, 0);
         if (byteCountRead == EWOULDBLOCK) {
         std::cout << "Neposlano" << std::endl;
@@ -184,8 +170,8 @@ std::string Connection::receiveMessage_SSL() {
 
     byteCountRead = SSL_read(ssl_object, buffer, BUFF_LEN-1);
     if (byteCountRead < 0) {
-        std::cerr << "ERROR: There are no answers from given server, check port number." << std::endl;
-        exit(-99);
+        std::cerr << "ERROR: There are no answers from given server." << std::endl;
+        exit(CONNECTION_ERROR);
     }
     receivedMessage = buffer;
 
@@ -227,7 +213,7 @@ bool Connection::isIPv6(const std::string& str) {
     	return false; 
 }
 
-// TODO zdroj http://beej.us/guide/bgnet/output/html/multipage/gethostbynameman.html
+// zdroj http://beej.us/guide/bgnet/output/html/multipage/gethostbynameman.html
 std::string Connection::getIPv4fromHost(std::string hostname) {
 
 	struct hostent *h;
@@ -244,8 +230,7 @@ std::string Connection::getIPv4fromHost(std::string hostname) {
     for (int i = 0; addr_list[i] != NULL; i++) {
         address.append(inet_ntoa(*addr_list[i]));
     }
-
-    //TODO split
+    // split
     return address;
 }
 

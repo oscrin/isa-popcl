@@ -17,8 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-Arguments::Arguments()
-{}
+Arguments::Arguments() {}
 
 int Arguments::parse(int argc, char * argv[])
 {
@@ -49,7 +48,7 @@ int Arguments::parse(int argc, char * argv[])
           setServer(argv[i]);
         } else {
           std::cerr << "ERROR: Unknown argument '" << argv[i] << "'." << std::endl;
-          exit(ARGUMENT_ERROR);
+          exit(UNKNOWN_ARGUMENT);
         }
       }
     }
@@ -91,10 +90,8 @@ int Arguments::parse(int argc, char * argv[])
           std::cerr << "ERROR: Unknown option '" << char(optopt) << "'." << std::endl;
         else
           std::cerr << "ERROR: Unknown option character" << std::endl;
+        
         exit(ARGUMENT_ERROR);
-      default:
-        exit(ARGUMENT_ERROR);
-        // abort();
       }
     }
 
@@ -115,7 +112,7 @@ bool Arguments::checkArgumentsConsistence() {
 
     if (t_flag == false && s_flag == false) {
       // ERROR ARGUMENT INCONSITENCE
-      std::cout << "Nekonzistence argumentu" << std::endl;
+      std::cout << "ERROR: Arguments inconsistency." << std::endl;
       return false;
     }
     return true;
@@ -154,7 +151,7 @@ int Arguments::assignPort() {
     }
     if (p_flag == false)
       port = 110;
-    
+
     return port;
 }
 
@@ -171,8 +168,8 @@ void Arguments::setAuthFile(char* optarg) {
     auth_file = optarg;
   }
   else {
-    std::cerr << "ERROR: AFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-a' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -182,8 +179,8 @@ void Arguments::setTFlag() {
 //    std::cout << "TFlag nastaven" << std::endl;
   }
 	else {
-    std::cerr << "ERROR: TFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-T' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -193,8 +190,8 @@ void Arguments::setSFlag() {
 //    std::cout << "SFlag nastaven" << std::endl;
   }
   else {
-    std::cerr << "ERROR: SFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-S' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -204,8 +201,8 @@ void Arguments::setDFlag() {
 //    std::cout << "DFlag nastaven" << std::endl;
   }
   else {
-    std::cerr << "ERROR: DFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-d' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -215,8 +212,8 @@ void Arguments::setNFlag() {
 //    std::cout << "NFlag nastaven" << std::endl;
   }
   else {
-    std::cerr << "ERROR: NFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-n' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -231,21 +228,20 @@ void Arguments::setPort(char* oprarg) {
     l = strtol(optarg, &pErr, 10);
 
     if (*pErr != '\0') {
-      std::cerr << "ERROR: Port number" << std::endl;
+      std::cerr << "ERROR: Incompatible port number." << std::endl;
       exit(INCOMPATIBLE_PORT);
     }
 
     if (l <= 0 || l > 65535) {
-      std::cerr << "ERROR: Port number" << std::endl;
+      std::cerr << "ERROR: Incompatible port number." << std::endl;
       exit(INCOMPATIBLE_PORT);
     } 
 
     port = l;
-//    std::cout << "Port nastaven" << std::endl;
   }
   else {
-    std::cerr << "ERROR: PFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-p' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -255,8 +251,8 @@ void Arguments::setCAfile(char* optarg) {
     cert_file = optarg;
   }
   else {
-    std::cerr << "ERROR: cFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+    std::cerr << "ERROR: Argument '-c' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -266,8 +262,8 @@ void Arguments::setCApath(char* optarg) {
     cert_addr = optarg;
   } 
   else {
-    std::cerr << "ERROR: CFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
+  std::cerr << "ERROR: Argument '-C' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);
   }
 }
 
@@ -277,8 +273,8 @@ void Arguments::setOutDir(char* optarg) {
     out_dir = optarg;
   }
   else {
-    std::cerr << "ERROR: OFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);    
+  std::cerr << "ERROR: Argument '-o' set more than once." << std::endl;
+    exit(DOUBLE_ARGUMENT);    
   }
 }
 
@@ -298,7 +294,7 @@ int Arguments::getPort() {
 
 std::string Arguments::getAuthFile() {
   if (auth_file.empty()) {
-    std::cerr << "ERROR: Auth File not set!" << std::endl;
+    std::cerr << "ERROR: Authfile not set!" << std::endl;
     exit(REQUIRED_ARGUMENT);
   }
   return auth_file;
@@ -306,7 +302,7 @@ std::string Arguments::getAuthFile() {
 
 std::string Arguments::getOutDir() {
   if (out_dir.empty()) {
-    std::cerr << "ERROR: Out Dir not set!" << std::endl;
+    std::cerr << "ERROR: Outdir not set!" << std::endl;
     exit(REQUIRED_ARGUMENT);
   }
 	return out_dir;

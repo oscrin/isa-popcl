@@ -12,12 +12,12 @@
 #include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>  // perror()
 
 #include "src/args.h"
 #include "src/connection.h"
 #include "src/pop3man.h"
 #include "src/help.h"
+#include "src/error.h"
 
 int main(int argc, char* argv[]) {
 
@@ -53,8 +53,13 @@ int main(int argc, char* argv[]) {
     		log = p3m.login_STLS(p_con, args.getCAfile(), args.getCApath());
     		if (log == -1) {
     			std::cerr << "ERROR: Bad login or password. Check " << args.getAuthFile() << "." << std::endl;
-    			return -10;
+    			return (BAD_LOGIN_OR_PW);
     		}
+            if (log == -2) {
+                p3m.logout(con);
+                std::cerr << "ERROR: STLS not supported on the server " << args.getServer() << "." << std::endl;
+                return (STLS_NOT_SUPPORTED);
+            }
     		retr = p3m.retrieveAllMail(con, args.getOutDir(), true, args.getNFlag());
     		if (args.getDFlag()) {
     			dele = p3m.deleteAllMail(*p_con, true);
@@ -65,7 +70,7 @@ int main(int argc, char* argv[]) {
 	    	log = p3m.login_SSL(p_con, args.getCAfile(), args.getCApath());
 	  		if (log == -1) {
     			std::cerr << "ERROR: Bad login or password. Check " << args.getAuthFile() << "." << std::endl;
-    			return -10;
+    			return (BAD_LOGIN_OR_PW);
     		}
 	  		retr = p3m.retrieveAllMail(con, args.getOutDir(), true, args.getNFlag());
 	  		if (args.getDFlag()) {
@@ -77,7 +82,7 @@ int main(int argc, char* argv[]) {
 			log = p3m.login(p_con);
 			if (log == -1) {
     			std::cerr << "ERROR: Bad login or password. Check " << args.getAuthFile() << "." << std::endl;
-    			return -10;
+    			return (BAD_LOGIN_OR_PW);
     		}
 			retr = p3m.retrieveAllMail(con, args.getOutDir(), false, args.getNFlag());
 			if (args.getDFlag()) {
@@ -91,18 +96,18 @@ int main(int argc, char* argv[]) {
 			if (retr == 0)
 				std::cout << "> No new messages found. ";
 			else if (retr == 1)
-				std::cout << "> " << retr << " new message has been downloaded to your " << args.getOutDir() << ". ";
+				std::cout << "> " << retr << " new message has been downloaded to your " << args.getOutDir() << " folder. ";
 			else
-				std::cout << "> " << retr << " new messages have been downloaded to your " << args.getOutDir() << ". ";	
+				std::cout << "> " << retr << " new messages have been downloaded to your " << args.getOutDir() << " folder. ";	
 		}
 		else {
 
 			if (retr == 0)
 				std::cout << "> There are no messages in your inbox. ";
 			else if (retr == 1)
-				std::cout << "> " << retr << " message has been downloaded to your " << args.getOutDir() << ". ";
+				std::cout << "> " << retr << " message has been downloaded to your " << args.getOutDir() << " folder. ";
 			else
-				std::cout << "> " << retr << " messages have been downloaded to your " << args.getOutDir() << ". ";
+				std::cout << "> " << retr << " messages have been downloaded to your " << args.getOutDir() << " folder. ";
 
 		}
 
@@ -113,11 +118,11 @@ int main(int argc, char* argv[]) {
 			else if (dele == 1)
 				std::cout << dele <<" message has been deleted from serer." << std::endl;
 			else
-				std::cout << "> " << retr << " messages have been deleted from serer." << std::endl;
+				std::cout << retr << " messages have been deleted from serer." << std::endl;
 		} else {
 			std::cout << std::endl;
 		}
     }
 
-    return 0;
+    return (SUCCESS_EXIT);
 }
