@@ -12,10 +12,6 @@ $ make
 ```sh
 $ ./popcl pop3.seznam.cz -p 110 -T -n -o maildir -a auth_file.txt
 ```
-### Additions & Limitations
-- If bad port specified using nonsecure connection, client must be closed manually using __CTRL+C__.
-- Certfolder not checked, use Certfile instead.
-
 
 ### Help
 - Help prints using atributes `-h`, `--help` or after running program without arguments. 
@@ -38,17 +34,23 @@ popcl <server> [-p <port>] [-T|-S [-c <certfile>] [-C <certaddr>]] [-d] [-n] -a 
 Authentization file contains username and password in strictly given order, natively in UNIX/Linux.
 
 > username = my_name
-
 > password = my_password
+
+### Additions & Limitations
+- If bad port specified using nonsecure connection, client must be closed manually using __CTRL+C__.
+- Primarily made for OpenSSL 1.0.2 libraries.
+- Natively port specified to 110 (unsecured, STARTTLS), 955 (POP3s).
+- Automatic server detection - IPv4, IPv6, domain name.
 
 ### Project Files
  - `src/args.cpp`
  - `src/args.h`
- - `src/config.h`
  - `src/connection.cpp`
  - `src/connection.h`
  - `src/error.h`
  - `src/fileman.cpp`
+ - `src/fileman.h`
+ - `src/help.h`
  - `src/pop3man.cpp`
  - `src/pop3man.h`
  - `Makefile`
