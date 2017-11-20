@@ -152,7 +152,9 @@ int Arguments::assignPort() {
       port = 110;
       return port;
     }
-    port = 110;
+    if (p_flag == false)
+      port = 110;
+    
     return port;
 }
 

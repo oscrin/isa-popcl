@@ -19,8 +19,6 @@
 #include "src/pop3man.h"
 #include "src/help.h"
 
-std::string my_name = "Buddy";
-
 int main(int argc, char* argv[]) {
 
     Arguments args;
@@ -44,6 +42,7 @@ int main(int argc, char* argv[]) {
 
     int retr;
     int dele;
+    int log;
 
     if (p3m.compileAuthFile(args.getAuthFile())) {
 
@@ -51,24 +50,36 @@ int main(int argc, char* argv[]) {
     	con.prepareComunication(con.portNum, con.hostname);
 
     	if (args.getSFlag()) {
-    		p3m.login_STLS(p_con, args.getCAfile(), args.getCApath());
-    		retr = p3m.retrieveAllMail(*p_con, args.getOutDir(), true, args.getNFlag());
+    		log = p3m.login_STLS(p_con, args.getCAfile(), args.getCApath());
+    		if (log == -1) {
+    			std::cerr << "ERROR: Bad login or password. Check " << args.getAuthFile() << "." << std::endl;
+    			return -10;
+    		}
+    		retr = p3m.retrieveAllMail(con, args.getOutDir(), true, args.getNFlag());
     		if (args.getDFlag()) {
     			dele = p3m.deleteAllMail(*p_con, true);
     		}
     		p3m.logout_SSL(p_con);
 		}
     	else if (args.getTFlag()) {
-	    	p3m.login_SSL(p_con, args.getCAfile(), args.getCApath());
-	  		retr = p3m.retrieveAllMail(*p_con, args.getOutDir(), true, args.getNFlag());
+	    	log = p3m.login_SSL(p_con, args.getCAfile(), args.getCApath());
+	  		if (log == -1) {
+    			std::cerr << "ERROR: Bad login or password. Check " << args.getAuthFile() << "." << std::endl;
+    			return -10;
+    		}
+	  		retr = p3m.retrieveAllMail(con, args.getOutDir(), true, args.getNFlag());
 	  		if (args.getDFlag()) {
     			dele = p3m.deleteAllMail(*p_con, true);
     		}
 			p3m.logout_SSL(p_con);
 		}
 		else {
-			p3m.login(con);
-			retr = p3m.retrieveAllMail(*p_con, args.getOutDir(), false, args.getNFlag());
+			log = p3m.login(p_con);
+			if (log == -1) {
+    			std::cerr << "ERROR: Bad login or password. Check " << args.getAuthFile() << "." << std::endl;
+    			return -10;
+    		}
+			retr = p3m.retrieveAllMail(con, args.getOutDir(), false, args.getNFlag());
 			if (args.getDFlag()) {
     			dele = p3m.deleteAllMail(*p_con, false);
     		}

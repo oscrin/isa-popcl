@@ -16,17 +16,23 @@
 #include <fstream>
 #include <cmath>
 
-int Pop3Manager::login(Connection con) {
+int Pop3Manager::login(Connection * p_con) {
 
-	con.receiveMessage();
+	p_con->receiveMessage();
 
-    con.sendMessage("USER " + username + "\r\n");
+    p_con->sendMessage("USER " + username + "\r\n");
 
-	con.receiveMessage();
+	p_con->receiveMessage();
+	if (p_con->receivedMessage.substr(0,4).compare("-ERR") == 0) {
+		return -1;
+	}
 
-    con.sendMessage("PASS " + pwd + "\r\n");
+    p_con->sendMessage("PASS " + pwd + "\r\n");
 
-	con.receiveMessage();
+	p_con->receiveMessage();
+	if (p_con->receivedMessage.substr(0,4).compare("-ERR") == 0) {
+		return -1;
+	}
 
     return 0;
 }
@@ -40,10 +46,16 @@ int Pop3Manager::login_SSL(Connection * p_con, std::string CAfile, std::string C
     p_con->sendMessage_SSL("USER " + username + "\r\n");
 
 	p_con->receiveMessage_SSL();
+	if (p_con->receivedMessage.substr(0,4).compare("-ERR") == 0) {
+		return -1;
+	}
 
     p_con->sendMessage_SSL("PASS " + pwd + "\r\n");
 
 	p_con->receiveMessage_SSL();
+	if (p_con->receivedMessage.substr(0,4).compare("-ERR") == 0) {
+		return -1;
+	}
 
     return 0;
 }
@@ -55,9 +67,8 @@ int Pop3Manager::login_STLS(Connection * p_con, std::string CAfile, std::string 
     p_con->sendMessage("CAPA\r\n");
 
 	p_con->receiveMessage();
-
     if ((p_con->receivedMessage).find("STLS") == std::string::npos) {
-    	return -1;
+    	return -2;
     	// TODO Server nepodportuje STLS
     }
 
@@ -70,10 +81,16 @@ int Pop3Manager::login_STLS(Connection * p_con, std::string CAfile, std::string 
     p_con->sendMessage_SSL("USER " + username + "\r\n");
 
 	p_con->receiveMessage_SSL();
+	if (p_con->receivedMessage.substr(0,4).compare("-ERR") == 0) {
+		return -1;
+	}
 
     p_con->sendMessage_SSL("PASS " + pwd + "\r\n");
 
 	p_con->receiveMessage_SSL();
+	if (p_con->receivedMessage.substr(0,4).compare("-ERR") == 0) {
+		return -1;
+	}
 
     return 0;
 }
@@ -142,7 +159,11 @@ std::string Pop3Manager::getMail(Connection con, int mailNum, bool sslFlag) {
 		do {
 		    con.receiveMessage_SSL();
 		    content.append(con.receivedMessage);
-		    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+		    if (con.receivedMessage.length() >=5) {
+		    	check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+		    } else {
+		    	break;
+		    }
 		} while (check.compare("\r\n.\r\n") != 0);
 	}
 	else {
@@ -150,7 +171,11 @@ std::string Pop3Manager::getMail(Connection con, int mailNum, bool sslFlag) {
 		do {
 	    	con.receiveMessage();
 	    	content.append(con.receivedMessage);
-	    	check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+	    	if (con.receivedMessage.length() >=5) {
+	    		check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+	    	} else {
+	    		break;
+	    	}
 		} while (check.compare("\r\n.\r\n") != 0);
 	}
 
@@ -168,12 +193,17 @@ int Pop3Manager::retrieveMail(Connection con, FileManager fm, int mailNum, std::
 	std::string filename;
 
 	content = getMail(con, mailNum, sslFlag);
+	if (content.length() == 0) {
+		std::cerr << "Content prazdny" << std::endl;
+		exit(999);
+	}
 
 	std::string header = content.substr(0,content.find("\r\n\r\n"));
-
-	fm.messageID = getMID(header);
-
-	content = dotCorrection(content);
+	if (header.length() == 0) {
+		content = dotCorrection(content);
+	} else {
+		fm.messageID = getMID(header);
+	}
 
 //	content.erase(content.length()-5, 5);
 // TODO check dots
@@ -300,11 +330,11 @@ std::string Pop3Manager::getMID(std::string header) {
 	// Message-Id: <20171107180800.3AFCA6CC@centrum.cz>
 	std::string messageID;
 
-	int index = header.find("Message-Id:");
+	int index = header.find("Message-Id: ");
 
 	if (index == int(std::string::npos)) {
 
-		index = header.find("Message-ID:");
+		index = header.find("Message-ID: ");
 	}
 
 	if (index == int(std::string::npos)) {

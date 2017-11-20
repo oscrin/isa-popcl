@@ -22,7 +22,7 @@ class Pop3Manager {
 		bool uidlFlag;
 
 	public:
-		int login(Connection con);
+		int login(Connection * p_con);
 		int login_SSL(Connection * p_con, std::string CAfile, std::string CApath);
 		int login_STLS(Connection * p_con, std::string CAfile, std::string CApath);
 

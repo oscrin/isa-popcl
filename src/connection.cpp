@@ -60,6 +60,12 @@ int Connection::prepareComunication(int portNum, std::string hostname) {
         exit(EXIT_FAILURE);	
     }
 
+    // https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+    struct timeval tv;
+    tv.tv_sec = 10;  /* 30 Secs Timeout */
+    tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+    setsockopt(clientSocket_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
+
     if (connect(clientSocket_fd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != 0) {
         perror("ERROR: connect");
         exit(EXIT_FAILURE);
@@ -80,19 +86,21 @@ int Connection::prepareSSL(const char * CAfile, const char * CApath) {
 		;
 	}
 
+    if (std::string(CApath).compare("/dev/null") == 0 and 
+        std::string(CAfile).compare("/dev/null") == 0) {
+
+    //  std::cout << "Nezadan certifikat" << std::endl;
+        SSL_CTX_set_default_verify_paths(ctx_object);
+    }
+
 	// CAfile x CApath potentially NULL
 	status = SSL_CTX_load_verify_locations(ctx_object, CAfile, CApath);
 	if (status == 0) {
 		// TODO raise error
 		// NELZE OVERIT IDENTITU
 		;
-	}
-
-	if (std::string(CApath).compare("/dev/null") == 0 and 
-		std::string(CAfile).compare("/dev/null") == 0) {
-
-	//	std::cout << "Nezadan certifikat" << std::endl;
-		SSL_CTX_set_default_verify_paths(ctx_object);
+            std::cout << "nelze overit identitu" << std::endl;
+            exit(-49);
 	}
 
 	ssl_object = SSL_new(ctx_object);
@@ -116,11 +124,15 @@ int Connection::prepareSSL(const char * CAfile, const char * CApath) {
 //	X509 * cert = 
 	if (SSL_get_peer_certificate(ssl_object) == NULL) {
 		// server neposlal certifikat
+
+        std::cout << "Zadny certifikat" << std::endl;
+            exit(-49);
 		if(SSL_get_verify_result(ssl_object) != X509_V_OK)
 		{
     		/* Handle the failed verification */
     		// prosly certifikat napriklad
     		std::cout << "Neplatny certifikat" << std::endl;
+            exit(-49);
 		}
 
 	}
@@ -136,6 +148,9 @@ std::string Connection::receiveMessage() {
 
     /*---- Read the message from the server into the buffer ----*/
     byteCountRead = recv(clientSocket_fd, buffer, BUFF_LEN-1, 0);
+        if (byteCountRead == EWOULDBLOCK) {
+        std::cout << "Neposlano" << std::endl;
+    }
     if (byteCountRead < 0)
         perror("ERROR: recv");
 
@@ -152,6 +167,7 @@ int Connection::sendMessage(std::string message) {
     strcpy(buffer, message.c_str());
 
     byteCountSend = send(clientSocket_fd, buffer, message.length(), 0);
+
     if (byteCountSend < 0)
         perror("ERROR: send");
 
@@ -167,9 +183,10 @@ std::string Connection::receiveMessage_SSL() {
 	memset(buffer, 0, BUFF_LEN);
 
     byteCountRead = SSL_read(ssl_object, buffer, BUFF_LEN-1);
-    if (byteCountRead < 0)
-        perror("ERROR: SSL_read");
-
+    if (byteCountRead < 0) {
+        std::cerr << "ERROR: There are no answers from given server, check port number." << std::endl;
+        exit(-99);
+    }
     receivedMessage = buffer;
 
     std::cout << "S(s): " << receivedMessage;
