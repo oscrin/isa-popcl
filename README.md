@@ -14,6 +14,7 @@ $ ./popcl pop3.seznam.cz -p 110 -T -n -o maildir -a auth_file.txt
 ```
 ### Additions & Limitations
 - If bad port specified using nonsecure connection, client must be closed manually using __CTRL+C__.
+- Certfolder not checked, use Certfile instead.
 
 
 ### Help
@@ -37,6 +38,7 @@ popcl <server> [-p <port>] [-T|-S [-c <certfile>] [-C <certaddr>]] [-d] [-n] -a 
 Authentization file contains username and password in strictly given order, natively in UNIX/Linux.
 
 > username = my_name
+
 > password = my_password
 
 ### Project Files
