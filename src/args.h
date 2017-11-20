@@ -18,12 +18,13 @@
 
 class Arguments {
 	private:
+        bool server_flag = false;
 		std::string server;
 //        bool ip4_flag = false;
 //        bool ip6_flag = false;
 
 		bool p_flag = false;
-        int port = 110;
+        int port;
 
         bool c_flag = false;
         bool C_flag = false;
@@ -50,6 +51,8 @@ class Arguments {
 
         int parse(int argc, char * argv[]);
 
+        int assignPort();
+
         void setServer(char* optarg);
         void setPort(char* optarg);
         void setTFlag();
@@ -63,6 +66,7 @@ class Arguments {
 
         bool getTFlag();
         bool getSFlag();
+        bool getNFlag();
         bool getDFlag();
         
         std::string getServer();
@@ -76,6 +80,9 @@ class Arguments {
 
         std::string getUsername();
         std::string getPwd();
+
+        bool checkArgumentsConsistence();
+        bool checkMandatoryArguments();
 };
 
 #endif

@@ -17,25 +17,31 @@ class Pop3Manager {
 		std::string username;
 		std::string pwd;
 		int messageCount;
-	public:
-		int unidentified = 0;
 
+		bool topFlag;
+		bool uidlFlag;
+
+	public:
 		int login(Connection con);
 		int login_SSL(Connection * p_con, std::string CAfile, std::string CApath);
+		int login_STLS(Connection * p_con, std::string CAfile, std::string CApath);
 
-		int retrieveMail(Connection con, FileManager fm, int mailNum, std::string folder);
-		int retrieveMail_SSL(Connection con, FileManager fm, int mailNum, std::string folder);		
-		
+		bool checkCapabilities(Connection con, std::string capa, bool sslFlag);
+		std::string topMail(Connection con, int mailNum, bool sslFlag);
+		std::string getMail(Connection con, int mailNum, bool sslFlag);
+
 		int countMessages(Connection con, bool sslFlag);
+		std::string getUIDL(Connection con, int mailNum, bool sslFlag);
+		std::string getMID(std::string header);
 
-		int retrieveAllMail(Connection con, std::string folder, bool sslFlag);
+		int retrieveMail(Connection con, FileManager fm, int mailNum, std::string folder, bool sslFlag);	
+		int retrieveAllMail(Connection con, std::string folder, bool sslFlag, bool nFlag);
+		int deleteAllMail(Connection con, bool sslFlag);
 		
 		int logout(Connection con);
 		int logout_SSL(Connection * con);
 
 		bool compileAuthFile(std::string auth_file);		
 		char* dotCorrection(std::string content);
-		std::string getUIDL(Connection con, int mailNum);
-		std::string getUIDL_SSL(Connection con, int mailNum);
-		std::string getMID(Connection con, std::string header);
+		std::string makeHeaderHash(const char * header);
 };

@@ -27,29 +27,30 @@ class Connection {
     	char buffer[BUFF_LEN];
 		int clientSocket_fd;
     	struct sockaddr_in serverAddr;
+        std::string hostname;
     	int portNum;
+
+        long long byteCountSend, byteCountRead = 0;
+
     	std::string message;
     	std::string receivedMessage;
     	std::string sentMessage;
-    	std::string hostname;
-    	long long byteCountSend, byteCountRead = 0;
 
     	int prepareComunication(int portNum, std::string hostname);
+        int prepareSSL(const char * CAfile, const char * CApath);
+        int freeSSL();
 
     	std::string receiveMessage();
     	int sendMessage(std::string message);
     	int sendMessage();
 
-    	std::string receiveMessageSSL();
-    	int sendMessageSSL(std::string message);
-    	int sendMessageSSL();
+    	std::string receiveMessage_SSL();
+    	int sendMessage_SSL(std::string message);
+    	int sendMessage_SSL();
 
 		bool isIPv4(const std::string& str);
 		bool isIPv6(const std::string& str);
 		std::string getIPv4fromHost(std::string hostname);
-
-		int prepareSTLS(const char * CAfile, const char * CApath);
-		int freeSTLS();
 };
 
 #endif

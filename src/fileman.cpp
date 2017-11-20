@@ -75,17 +75,10 @@ bool FileManager::saveEmailFile(std::string emailFile, std::string content) {
 
 bool FileManager::actualizeTsvFile(std::string uidl, std::string mid) {
 
-	std::string tsvFile = out_dir + "/.mail";
+	std::string tsvFile = out_dir + "/.mail.tsv";
 
-	std::ifstream aF;
-    std::string nl;
-
-    aF.open(tsvFile);
-    if (aF.is_open()) {
-    	while (!aF.eof()) {
-        	getline(aF,nl);
-   		}
-    }
+	if (searchTsvFile(uidl.c_str(), mid.c_str()) == true)
+		return false;
 
 	if (access( tsvFile.c_str(), F_OK ) != -1) { // file exists
 	
@@ -100,4 +93,40 @@ bool FileManager::actualizeTsvFile(std::string uidl, std::string mid) {
 
 	}
 	return true;
+}
+
+bool FileManager::searchTsvFile(const char * uidl, const char * mid) {
+
+std::string tsvFile = out_dir + "/.mail.tsv";
+
+	std::ifstream aF;
+    std::string nl;
+    std::string u;
+    std::string m;
+    int sep;
+
+    aF.open(tsvFile);
+    if (aF.is_open()) {
+    	while (!aF.eof()) {
+        	getline(aF,nl);
+
+        	if ((sep = nl.find("\t")) != int(std::string::npos)) {
+            	u = nl.substr(0,sep);
+        		m = nl.substr(sep,nl.length()-sep);
+
+	        	if (uidl != NULL) {
+	        		if (u.compare(uidl) == 0)
+	        			return true;
+	        	}
+	        	if (mid != NULL) {
+	        		if (m.compare(mid) == 0)
+	        			return true;
+	        	}	
+        	}
+   		}
+
+   		return false;
+    }
+
+    return false;
 }

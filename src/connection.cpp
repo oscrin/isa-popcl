@@ -64,11 +64,12 @@ int Connection::prepareComunication(int portNum, std::string hostname) {
         perror("ERROR: connect");
         exit(EXIT_FAILURE);
     }
+    
     return 0;
 }
 
 // called after prepareCommunication
-int Connection::prepareSTLS(const char * CAfile, const char * CApath) {
+int Connection::prepareSSL(const char * CAfile, const char * CApath) {
 
 	int status;
 	SSL_library_init();
@@ -85,6 +86,13 @@ int Connection::prepareSTLS(const char * CAfile, const char * CApath) {
 		// TODO raise error
 		// NELZE OVERIT IDENTITU
 		;
+	}
+
+	if (std::string(CApath).compare("/dev/null") == 0 and 
+		std::string(CAfile).compare("/dev/null") == 0) {
+
+	//	std::cout << "Nezadan certifikat" << std::endl;
+		SSL_CTX_set_default_verify_paths(ctx_object);
 	}
 
 	ssl_object = SSL_new(ctx_object);
@@ -105,15 +113,19 @@ int Connection::prepareSTLS(const char * CAfile, const char * CApath) {
 //	long status_l;
 //	status_l = SSL_get_verify_result(ssl_object);
 
-	X509 * cert = SSL_get_peer_certificate(ssl_object);
-	
+//	X509 * cert = 
+	if (SSL_get_peer_certificate(ssl_object) == NULL) {
+		// server neposlal certifikat
+		if(SSL_get_verify_result(ssl_object) != X509_V_OK)
+		{
+    		/* Handle the failed verification */
+    		// prosly certifikat napriklad
+    		std::cout << "Neplatny certifikat" << std::endl;
+		}
 
-	if (SSL_get_verify_result(ssl_object) != X509_V_OK) {
-    /* Handle the failed verification */
-	// TODO
 	}
 
-	X509_free(cert);
+//	X509_free(cert);
 
 	return 0;
 }
@@ -123,7 +135,7 @@ std::string Connection::receiveMessage() {
 	memset(buffer, 0, BUFF_LEN);
 
     /*---- Read the message from the server into the buffer ----*/
-    byteCountRead = recv(clientSocket_fd, buffer, BUFF_LEN/2, 0);
+    byteCountRead = recv(clientSocket_fd, buffer, BUFF_LEN-1, 0);
     if (byteCountRead < 0)
         perror("ERROR: recv");
 
@@ -150,23 +162,7 @@ int Connection::sendMessage(std::string message) {
     return byteCountSend;
 }
 
-int Connection::sendMessage() {
-
-	memset(buffer, 0, BUFF_LEN);
-    strcpy(buffer, message.c_str());
-
-    byteCountSend = send(clientSocket_fd, buffer, message.length(), 0);
-    if (byteCountSend < 0)
-        perror("ERROR: send");
-
-    sentMessage = message;
-
-    std::cout << "C: " << sentMessage;
-
-    return byteCountSend;
-}
-
-std::string Connection::receiveMessageSSL() {
+std::string Connection::receiveMessage_SSL() {
 
 	memset(buffer, 0, BUFF_LEN);
 
@@ -181,23 +177,7 @@ std::string Connection::receiveMessageSSL() {
     return receivedMessage;
 }
 
-int Connection::sendMessageSSL() {
-
-	memset(buffer, 0, BUFF_LEN);
-    strcpy(buffer, message.c_str());
-
-	byteCountSend = SSL_write(ssl_object, buffer, message.length());
-	if (byteCountSend < 0)
-        perror("ERROR: SSL_write");
-
-    sentMessage = message;
-
-    std::cout << "C(s): " << sentMessage;
-
-    return byteCountSend;
-}
-
-int Connection::sendMessageSSL(std::string message) {
+int Connection::sendMessage_SSL(std::string message) {
 
 	memset(buffer, 0, BUFF_LEN);
     strcpy(buffer, message.c_str());
@@ -237,7 +217,7 @@ std::string Connection::getIPv4fromHost(std::string hostname) {
     struct in_addr **addr_list;
 
 	if ((h = gethostbyname(hostname.c_str())) == NULL) {  // get the host info
-        std::cerr << "Host Unresolved." << std::endl;
+        std::cerr << "ERROR: Host Unresolved." << std::endl;
         exit(HOST_UNRESOLVED);
     }
 
@@ -252,7 +232,7 @@ std::string Connection::getIPv4fromHost(std::string hostname) {
     return address;
 }
 
-int Connection::freeSTLS() {
+int Connection::freeSSL() {
 
 	SSL_CTX_free(ctx_object);
 	SSL_free(ssl_object);

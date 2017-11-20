@@ -16,41 +16,22 @@
 class FileManager {
 	private:
 		int email_count;
-
 		std::string pwd;
-		std::string out_dir;
 
 	public:
-		/*
-		struct email_param {
-			std::string emailFile;
-			int messageNum;
-
-			long int size;
-
-			std::string subject;
-			std::string date;
-			std::string from;
-			std::string to;
-
-			std::string content;
-		};
-		*/
-
-	//	email_param email;
+		std::string out_dir;
 		std::string messageID;
-		std::string messageUIDL;
+		std::string messageUIDL = "none";
 
 		bool createOutDir(std::string dir);
 
 		bool saveEmailFile(std::string emailFile, std::string content);
 
-	//	void identificateMail(std::string content);
-
 		std::string generateEmailFileByMID(std::string content);
 		std::string generateEmailFileByUIDL(std::string uidl);
 
 		bool actualizeTsvFile(std::string uidl, std::string mid);
+		bool searchTsvFile(const char * uidl, const char * mid);
 };
 
 #endif

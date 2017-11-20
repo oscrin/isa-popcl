@@ -18,82 +18,74 @@
 
 int Pop3Manager::login(Connection con) {
 
-    con.message = "USER " + username + "\r\n";
-    con.sendMessage(con.message);
+	con.receiveMessage();
 
-    con.receivedMessage = con.receiveMessage();
+    con.sendMessage("USER " + username + "\r\n");
 
-    con.message = "PASS " + pwd + "\r\n";
-    con.sendMessage(con.message);
+	con.receiveMessage();
 
-    con.receivedMessage = con.receiveMessage();
+    con.sendMessage("PASS " + pwd + "\r\n");
+
+	con.receiveMessage();
 
     return 0;
 }
 
 int Pop3Manager::login_SSL(Connection * p_con, std::string CAfile, std::string CApath) {
 
-    p_con->message = "CAPA\r\n";
-    p_con->sendMessage();
+    p_con->prepareSSL(CAfile.c_str(), CApath.c_str());
 
-    p_con->receivedMessage = p_con->receiveMessage();
+    p_con->receiveMessage_SSL();
 
-    p_con->message = "STLS\r\n";
-    p_con->sendMessage();
+    p_con->sendMessage_SSL("USER " + username + "\r\n");
 
-    p_con->receivedMessage = p_con->receiveMessage();
+	p_con->receiveMessage_SSL();
 
-    p_con->prepareSTLS(CAfile.c_str(), CApath.c_str());
+    p_con->sendMessage_SSL("PASS " + pwd + "\r\n");
 
-//    p_con->message = "CAPA\r\n";
-//    p_con->sendMessageSSL(p_con->message);
-//    p_con->receivedMessage = p_con->receiveMessageSSL();
+	p_con->receiveMessage_SSL();
 
-    p_con->message = "USER " + username + "\r\n";
-    p_con->sendMessageSSL(p_con->message);
+    return 0;
+}
 
-    p_con->receivedMessage = p_con->receiveMessageSSL();
+int Pop3Manager::login_STLS(Connection * p_con, std::string CAfile, std::string CApath) {
 
-    p_con->message = "PASS " + pwd + "\r\n";
+	p_con->receiveMessage();
 
-    p_con->sendMessageSSL(p_con->message);
+    p_con->sendMessage("CAPA\r\n");
 
-    p_con->receivedMessage = p_con->receiveMessageSSL();
+	p_con->receiveMessage();
 
-    // DOWNLOAD
-//	FileManager fm;
+    if ((p_con->receivedMessage).find("STLS") == std::string::npos) {
+    	return -1;
+    	// TODO Server nepodportuje STLS
+    }
 
-	retrieveAllMail(*p_con, "test_folder", true);
+    p_con->sendMessage("STLS\r\n");
 
-   // retrieveMail_SSL(con, fm, 1, "test_folder");
+	p_con->receiveMessage();
 
-    // LOGOUT
+    p_con->prepareSSL(CAfile.c_str(), CApath.c_str());
 
-//    logout_SSL(con);
+    p_con->sendMessage_SSL("USER " + username + "\r\n");
 
-/*    p_con->message = "QUIT\r\n";
+	p_con->receiveMessage_SSL();
 
-	p_con->sendMessageSSL(p_con->message);
+    p_con->sendMessage_SSL("PASS " + pwd + "\r\n");
 
-	p_con->receiveMessageSSL();
+	p_con->receiveMessage_SSL();
 
-	con.freeSTLS();
-*/
     return 0;
 }
 
 int Pop3Manager::countMessages(Connection con, bool sslFlag) {
 
-    con.message = "STAT\r\n";
-
     if (sslFlag) {
-	    con.sendMessageSSL(con.message);
-
-	    con.receivedMessage = con.receiveMessageSSL();   
+	    con.sendMessage_SSL("STAT\r\n");
+		con.receiveMessage_SSL();   
     } else {
-	    con.sendMessage(con.message);
-
-	    con.receivedMessage = con.receiveMessage();    	
+	    con.sendMessage("STAT\r\n");
+		con.receiveMessage();    	
     }
 
     std::string s;
@@ -111,215 +103,252 @@ int Pop3Manager::countMessages(Connection con, bool sslFlag) {
     return messageCount;
 }
 
+std::string Pop3Manager::topMail(Connection con, int mailNum, bool sslFlag) {
 
-int Pop3Manager::retrieveMail(Connection con, FileManager fm, int mailNum, std::string folder) {
+	std::string header = "";
+	std::string check;
+
+	if (sslFlag) {
+		con.sendMessage_SSL("TOP " + std::to_string(mailNum) + "0\r\n");
+		do {
+		    con.receiveMessage_SSL();
+		    header.append(con.receivedMessage);
+		    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+		} while (check.compare("\r\n.\r\n") != 0);
+	}
+	else {
+		con.sendMessage("TOP " + std::to_string(mailNum) + "0\r\n");
+		do {
+	    	con.receiveMessage();
+	    	header.append(con.receivedMessage);
+	    	check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+		} while (check.compare("\r\n.\r\n") != 0);
+	}
+
+	// remove first line and last characters "\r\n.\r\n"
+	header.erase(0, header.find("\r\n") + 2);
+	header.erase(header.length()-5, 5);
+
+	return header;
+}
+
+std::string Pop3Manager::getMail(Connection con, int mailNum, bool sslFlag) {
+
+	std::string content = "";
+	std::string check;
+
+	if (sslFlag) {
+		con.sendMessage_SSL("RETR " + std::to_string(mailNum) + "\r\n");
+		do {
+		    con.receiveMessage_SSL();
+		    content.append(con.receivedMessage);
+		    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+		} while (check.compare("\r\n.\r\n") != 0);
+	}
+	else {
+		con.sendMessage("RETR " + std::to_string(mailNum) + "\r\n");
+		do {
+	    	con.receiveMessage();
+	    	content.append(con.receivedMessage);
+	    	check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
+		} while (check.compare("\r\n.\r\n") != 0);
+	}
+
+	// remove first line and last characters "\r\n.\r\n"
+	content.erase(0, content.find("\r\n") + 2);
+	content.erase(content.length()-5, 5);
+
+	return content;
+
+}
+
+int Pop3Manager::retrieveMail(Connection con, FileManager fm, int mailNum, std::string folder, bool sslFlag) {
 
 	std::string content = "";
 	std::string filename;
 
-	con.message = "RETR " + std::to_string(mailNum) + "\r\n";
-	con.sendMessage();
-
-	std::string check;
-
-	do {
-
-	    con.receiveMessage();
-	    content.append(con.receivedMessage);
-
-	    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
-
-	} while (check.compare("\r\n.\r\n") != 0);
-
-	// remove first line and last characters "\r\n.\r\n"
-	content.erase(0, content.find("\r\n") + 2);
+	content = getMail(con, mailNum, sslFlag);
 
 	std::string header = content.substr(0,content.find("\r\n\r\n"));
-	fm.messageID = getMID(con, header);
+
+	fm.messageID = getMID(header);
 
 	content = dotCorrection(content);
-	content.erase(content.length()-5, 5);
+
+//	content.erase(content.length()-5, 5);
+// TODO check dots
 
 	fm.saveEmailFile(fm.messageID, content);
+
 	fm.actualizeTsvFile(fm.messageUIDL, fm.messageID);
 
-//	content = "";
-
 	return 0;
 }
 
-int Pop3Manager::retrieveMail_SSL(Connection con, FileManager fm, int mailNum, std::string folder) {
+bool Pop3Manager::checkCapabilities(Connection con, std::string capa, bool sslFlag) {
 
-	std::string content = "";
-	std::string filename;
-
-	con.message = "RETR " + std::to_string(mailNum) + "\r\n";
-	con.sendMessageSSL();
-
-	std::string check;
-
-	do {
-
-	    con.receiveMessageSSL();
-	    content.append(con.receivedMessage);
-
-	    check = con.receivedMessage.substr(con.receivedMessage.length()-5,5);
-
-	} while (check.compare("\r\n.\r\n") != 0);
-
-	// remove first line and last characters "\r\n.\r\n"
-	content.erase(0, content.find("\r\n") + 2);
-
-	std::string header = content.substr(0,content.find("\r\n\r\n"));
-	fm.messageID = getMID(con, header);
-
-	content = dotCorrection(content);
-	content.erase(content.length()-5, 5);
-
-	fm.saveEmailFile(fm.messageID, content);
-//	fm.actualizeTsvFile(fm.messageUIDL, fm.messageID);
-
-	return 0;
+	if (sslFlag) {
+		con.sendMessage_SSL("CAPA\r\n");
+		con.receiveMessage_SSL();
+	} else {
+		con.sendMessage("CAPA\r\n");
+		con.receiveMessage();
+	}
+	if (con.receivedMessage.find(capa) == std::string::npos)
+		return false;
+	else
+		return true;
 }
 
+int Pop3Manager::retrieveAllMail(Connection con, std::string folder, bool sslFlag, bool nFlag) {
 
-int Pop3Manager::retrieveAllMail(Connection con, std::string folder, bool sslFlag) {
+	uidlFlag = checkCapabilities(con,"UIDL",sslFlag);
+	if (!uidlFlag)
+		topFlag = checkCapabilities(con,"TOP",sslFlag);
+
+	bool retrFlag = true;
 
 	int messageCount = countMessages(con, sslFlag);
+	int retrieved = 0;
 
-	std::string uidl;
-	std::string mid;
+	std::string header;
+	std::string content;
+
 	FileManager fm;
 	fm.createOutDir(folder);
 
 	for (int mailNum = 1; mailNum <= messageCount; mailNum++) {
 
-		if (sslFlag) {
-			uidl = getUIDL_SSL(con, mailNum);
-		} else {
-			uidl = getUIDL(con, mailNum);
+		if(nFlag) {
+			if (uidlFlag) {
+				// check according to UIDL
+				fm.messageUIDL = getUIDL(con, mailNum, sslFlag);
+				retrFlag = !(fm.searchTsvFile(fm.messageUIDL.c_str(), NULL));
+			}
+			else {
+				if (topFlag) {
+					// check according to MID in TOP
+					header = topMail(con, mailNum, sslFlag);
+					fm.messageID = getMID(header);
+					retrFlag = !(fm.searchTsvFile(NULL, fm.messageID.c_str()));
+				}
+				else {
+					// check according to MID in RETR
+					content = getMail(con, mailNum, sslFlag);
+					header = content.substr(0,content.find("\r\n\r\n"));
+					fm.messageID = getMID(header);
+					retrFlag = !(fm.searchTsvFile(NULL, fm.messageID.c_str()));
+				}
+			}
 		}
-		
-		fm.messageUIDL = uidl;
 
-		if (sslFlag) {
-			retrieveMail_SSL(con, fm, mailNum, folder);			
-		}
 		else {
-			retrieveMail(con, fm, mailNum, folder);
+			if (uidlFlag) {
+				fm.messageUIDL = getUIDL(con, mailNum, sslFlag);
+			}			
+		}
+
+		if (retrFlag) {
+			retrieveMail(con, fm, mailNum, folder, sslFlag);
+			retrieved++;
 		}
 	}
 
-	return messageCount;
+	return retrieved;
 }
 
-std::string Pop3Manager::getUIDL(Connection con, int mailNum) {
+int Pop3Manager::deleteAllMail(Connection con, bool sslFlag) {
+	
+	int messageCount = countMessages(con, sslFlag);
+	int dele = 0;
 
-	con.message = "UIDL " + std::to_string(mailNum) + "\r\n";
-	con.sendMessage(con.message);
+	for (int mailNum = 1; mailNum <= messageCount; mailNum++) {
+		if (sslFlag) {
+			con.sendMessage_SSL("DELE " + std::to_string(mailNum) + "\r\n");
+			con.receiveMessage_SSL();
+		}
+		else {
+			con.sendMessage("DELE " + std::to_string(mailNum) + "\r\n");
+			con.receiveMessage();
+		}
+		dele++;
+	}
+	return dele;
+}
 
-	con.message = con.receiveMessage();
-	std::string uidl = con.message;
+std::string Pop3Manager::getUIDL(Connection con, int mailNum, bool sslFlag) {
+
+	if (sslFlag) {
+		con.sendMessage_SSL("UIDL " + std::to_string(mailNum) + "\r\n");
+		con.receiveMessage_SSL();		
+	} else {
+		con.sendMessage("UIDL " + std::to_string(mailNum) + "\r\n");
+		con.receiveMessage();
+	}
+
+	std::string uidl = con.receivedMessage;
 
 	uidl.erase(0,4);
 	uidl.erase(0,uidl.find(" ")+1);
 	uidl = uidl.substr(0,uidl.length()-2);
 
-//	std::cout << "UIDL: " << uidl << std::endl;
-
 	return uidl;
 }
 
-std::string Pop3Manager::getUIDL_SSL(Connection con, int mailNum) {
-
-	con.message = "UIDL " + std::to_string(mailNum) + "\r\n";
-	con.sendMessageSSL(con.message);
-
-	con.message = con.receiveMessageSSL();
-	std::string uidl = con.message;
-
-	uidl.erase(0,4);
-	uidl.erase(0,uidl.find(" ")+1);
-	uidl = uidl.substr(0,uidl.length()-2);
-
-//	std::cout << "UIDL: " << uidl << std::endl;
-
-	return uidl;
-}
-
-std::string Pop3Manager::getMID(Connection con, std::string header) {
+std::string Pop3Manager::getMID(std::string header) {
 
 	// Message-Id: <20171107180800.3AFCA6CC@centrum.cz>
 	std::string messageID;
 
-	int index = (header.find("Message-Id:") == std::string::npos) ? header.find("Message-ID:") : header.find("Message-Id:");
+	int index = header.find("Message-Id:");
 
 	if (index == int(std::string::npos)) {
 
-		// TODO - need to be checked
-		//	std::cout << "Message-Id not found." << std::endl;
+		index = header.find("Message-ID:");
+	}
+
+	if (index == int(std::string::npos)) {
+
+		std::string hash = makeHeaderHash(header.c_str());
+
+		std::string from;
 		index = header.find("From:");
+
 		if (index == int(std::string::npos)) {
-			messageID = "unidentified" + std::to_string(++unidentified);
-			return messageID;
+			from = "from@unknown.xxx";
+		} else {
+			from = header;
+			from.erase(0, index);
+			from.erase(0,from.find("<")+1);
+			from = from.substr(0, from.find(">"));
 		}
 
-		std::string from = header;
-		from.erase(0, index);
-		from.erase(0,from.find("<")+1);
-		messageID = from.substr(0, from.find(">"));
-
-		index = header.find("Date:");
-		if (index == int(std::string::npos)) {
-			messageID = "unidentified" + std::to_string(++unidentified);
-			return messageID;
-		}
-
-		std::string date = header;
-		date.erase(0,index);
-		date.erase(0,6);
-		int i = date.find("\r\n");
-
-		date.erase(i, date.length()-i);
-		
-		int j = date.find(" ");
-		while (j == int(std::string::npos)) {
-			date.replace(j,1,"_");
-			j = date.find(" ");
-		}
-
-		messageID = date + "-" + from;
-
+		messageID = hash + "." + from;
 		return messageID;
 	}
 	else {
-
 	header.erase(0, index);
 	header.erase(0,header.find("<")+1);
 	messageID = header.substr(0, header.find(">"));
 	}
 
 	return messageID;
-
 }
 
 int Pop3Manager::logout(Connection con) {
 
-	con.message = "QUIT\r\n";
-	con.sendMessage();
+	con.sendMessage("QUIT\r\n");
 	con.receiveMessage();
-	std::cout << "LOGOUT: " << con.receivedMessage << std::endl;
 
 	return 0;
 }
 
 int Pop3Manager::logout_SSL(Connection * con) {
 
-	con->message = "QUIT\r\n";
-	con->sendMessageSSL(con->message);
-	con->receiveMessageSSL();
+	con->sendMessage_SSL("QUIT\r\n");
+	con->receiveMessage_SSL();
 
-	con->freeSTLS();
+	con->freeSSL();
 
 	return 0;
 }
@@ -386,22 +415,30 @@ char* Pop3Manager::dotCorrection(std::string content) {
 				}
 				// if dots are 2 or more
 				if (j > k) {
-				/*
-					// if after dot there's new line
-					if (content_buffer[j] == '\r' && content_buffer[j+1] == '\n') {
-				
-				*/		// shift all characters left and rewrite second dot
-						while (k < (length-2))  {
+					// shift all characters left and rewrite second dot
+					while (k < (length-2))  {
 
-							content_buffer[k] = content_buffer[k+1];
-							k++;	
-						}
-						// last character set null
-						content_buffer[k] = '\0';
-				//	}
+						content_buffer[k] = content_buffer[k+1];
+						k++;	
+					}
+					// last character set null
+					content_buffer[k] = '\0';
 				}
 			}
 		}
 	}
 	return content_buffer;
+}
+
+std::string Pop3Manager::makeHeaderHash(const char * header) {
+
+    // djb2 by Dan Bernstein
+    // http://www.cse.yorku.ca/~oz/hash.html
+    unsigned long hash = 5381;
+    int c;
+
+    while (c = *header++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return std::to_string(hash);
 }

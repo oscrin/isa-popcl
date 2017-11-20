@@ -17,43 +17,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
-void printHelp() {
-    std::cout << "\e[32mProgram usage:" << std::endl;
-    std::cout << "\e[31mpopcl <server> [-p <port>] [-T|-S [-c <certfile>] [-C <certaddr>]] [-d] [-n] -a <auth_file> -o <out_dir>" << std::endl;
-    std::cout << "\e[39m\e[2m     -p   port            - sets remote TCP port" << std::endl;
-    std::cout << "     -T   pop3s           - sets pop3s secured connection" << std::endl;
-    std::cout << "     -S   STSL            - connects with STLS (RFC 2595)" << std::endl;
-    std::cout << "     -c   certfile        - path to certificate file" << std::endl;
-    std::cout << "     -C   certfolder      - path to folder with certificates" << std::endl;
-    std::cout << "     -d   delete          - deletes all messages from server" << std::endl;
-    std::cout << "     -n   new messages    - works only with new messages" << std::endl;
-    std::cout << "     -a   authentication  - path to authentication file" << std::endl;
-    std::cout << "     -o   outdir          - folder where messages will be stored\e[0m" << std::endl;
-
-    exit(SUCCESS_EXIT);
-}
-
 Arguments::Arguments()
 {}
 
 int Arguments::parse(int argc, char * argv[])
 {
     if (argc == 1)
-      printHelp();
+      return -1;
 
     if (argc > 1) {
       if (std::string(argv[1]).compare("-h") == 0 || std::string(argv[1]).compare("--help") == 0)
-        printHelp();
-      else
-        setServer(argv[1]);
+        return -1;
     }
   
   int c;
 
   opterr = 0;
 
-  for ( int i = 2; i < argc; i++)
+  for ( int i = 1; i < argc; i++)
     if ( std::string(argv[i]).substr(0,1) != "-" ) {
       if (std::string(argv[i-1]).compare("-p") == 0 || 
           std::string(argv[i-1]).compare("-c") == 0 ||
@@ -64,8 +45,12 @@ int Arguments::parse(int argc, char * argv[])
         )
         continue;
       else {
-        std::cerr << "ERROR: Unknown argument '" << argv[i] << "'." << std::endl;
-        exit(ARGUMENT_ERROR);
+        if (!server_flag) {
+          setServer(argv[i]);
+        } else {
+          std::cerr << "ERROR: Unknown argument '" << argv[i] << "'." << std::endl;
+          exit(ARGUMENT_ERROR);
+        }
       }
     }
 
@@ -113,16 +98,80 @@ int Arguments::parse(int argc, char * argv[])
       }
     }
 
- // TODO
- // checkArgumentsConsistence();
- // checkMandatoryArguments();
+    assignPort();
+    
+    if (!checkArgumentsConsistence())
+      return -2;
+    if (!checkMandatoryArguments())
+      return -3;
+
     return 0;
+}
+
+// ------------ CHECKS ------------
+
+bool Arguments::checkArgumentsConsistence() {
+  if (c_flag == true || C_flag == true) {
+
+    if (t_flag == false && s_flag == false) {
+      // ERROR ARGUMENT INCONSITENCE
+      std::cout << "Nekonzistence argumentu" << std::endl;
+      return false;
+    }
+    return true;
+  }
+  return true;
+}
+
+bool Arguments::checkMandatoryArguments() {
+  if (a_flag == false) {
+    // ERROR - auth file must be set
+    std::cout << "ERROR: Authfile not set." << std::endl;
+    return false;
+  }
+
+  if (o_flag == false) {
+    // ERROR - output dir must be set
+    std::cout << "ERROR: Outdir not set." << std::endl;
+    return false;
+  }
+
+  if (server_flag == false) {
+    std::cout << "ERROR: Server not set." << std::endl;
+    return false;
+  }
+  return true;
+}
+
+int Arguments::assignPort() {
+    if (p_flag == false && t_flag == true) {
+      port = 995;
+      return port;
+    }
+    if (p_flag == false && s_flag == true) {
+      port = 110;
+      return port;
+    }
+    port = 110;
+    return port;
 }
 
 // ------------ SETS ------------
 
 void Arguments::setServer(char* optarg) {
+  server_flag = true;
 	server = std::string(optarg);
+}
+
+void Arguments::setAuthFile(char* optarg) {
+  if (a_flag == false) {
+    a_flag = true;
+    auth_file = optarg;
+  }
+  else {
+    std::cerr << "ERROR: AFlag" << std::endl;
+    exit(FLAG_ALREADY_SET);
+  }
 }
 
 void Arguments::setTFlag() {
@@ -277,27 +326,17 @@ std::string Arguments::getCApath() {
 	return cert_addr;
 }
 
-void Arguments::setAuthFile(char* optarg) {
-  if (a_flag == false) {
-    a_flag = true;
-    auth_file = optarg;
-  }
-  else {
-    std::cerr << "ERROR: AFlag" << std::endl;
-    exit(FLAG_ALREADY_SET);
-  }
+bool Arguments::getTFlag(){
+  return t_flag;
+}
+bool Arguments::getSFlag() {
+  return s_flag;
 }
 
-std::string Arguments::getUsername() {
-  if (a_flag == true)
-    return username;
-  else
-    return "";
+bool Arguments::getNFlag() {
+  return n_flag;
 }
 
-std::string Arguments::getPwd() {
-  if (a_flag == true)
-    return pwd;
-  else
-    return "";
+bool Arguments::getDFlag() {
+  return d_flag;
 }
