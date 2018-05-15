@@ -34,6 +34,7 @@ popcl <server> [-p <port>] [-T|-S [-c <certfile>] [-C <certaddr>]] [-d] [-n] -a 
 Authentization file contains username and password in strictly given order, natively in UNIX/Linux.
 
 > username = my_name
+
 > password = my_password
 
 ### Additions & Limitations
